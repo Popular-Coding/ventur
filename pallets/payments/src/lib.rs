@@ -1,0 +1,223 @@
+//! # Payments Pallet
+// 
+//! The Payments pallet supports the instantiation of lump sum
+//! or scheduled, iterative payments. 
+//! Payments can come out of an individual's account, or out of
+//! an escrow account set up by the payer of the payment agreement
+// 
+//! Payments must be claimed by individuals
+//! In the case of scheduled, iterative payments, payments can only
+//! be claimed if the claim comes after the scheduled payment date
+//
+//! Inspiration for the source code of this pallet comes from 
+//! the Pure-Stake Crowdloan Rewards Pallet:
+//! https://github.com/PureStake/crowdloan-rewards/blob/main/src/lib.rs
+//! 
+//! While the Crowdloan Rewards Pallet supports claiming rewards,
+//! this Payments Pallet supports the instantiation of scheduled payments
+//! as well as lump sum, one-time payments
+
+#![cfg_attr(not(feature = "std"), no_std)]
+pub use pallet::*;
+
+#[cfg(test)]
+pub(crate) mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+#[frame_support::pallet]
+pub mod pallet {
+	use frame_support::{
+		pallet_prelude::RuntimeDebugNoBound,
+		pallet_prelude::*,
+		traits::{Currency, ExistenceRequirement::AllowDeath, UnixTime},
+		storage::bounded_vec::BoundedVec,
+	};
+	use frame_system::pallet_prelude::*;
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub struct PaymentDetails<T: Config>{
+		pub(super) payer: T::AccountId,
+		pub(super) payee: T::AccountId,
+		pub(super) payment_id: T::PaymentId,
+		pub(super) rfp_reference_id: T::RFPReferenceId,
+		pub(super) total_payment_amount: BalanceOf<T>,
+		pub(super) payment_schedule: BoundedVec<ScheduledPayment<T>, T::MaxPaymentsScheduled>,
+		pub(super) payment_method: PaymentMethod<T>,
+		pub(super) administrator_id: T::AccountId,
+	}
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub struct ScheduledPayment<T: Config> {
+		pub(super) payment_date: u64,
+		pub(super) amount_per_claim: BalanceOf<T>,
+		pub(super) released: bool,
+	}
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound,  PartialEq, scale_info::TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub enum PaymentSource {
+		#[default]
+		PersonalAccount,
+		EscrowAccount,
+	}
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
+	#[scale_info(skip_type_params(T))]
+	pub struct PaymentMethod<T: Config> {
+		pub(super) payment_source: PaymentSource,
+		pub(super) account_id: T::AccountId,
+	}
+
+	pub type BalanceOf<T> = <<T as Config>::PaymentCurrency as Currency<
+		<T as frame_system::Config>::AccountId,
+	>>::Balance;
+
+	/// Configure the pallet by specifying the parameters and types on which it depends.
+	#[pallet::config]
+	pub trait Config: frame_system::Config {
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type PaymentId: Member + Parameter + Clone + Eq;
+		type RFPReferenceId: Member + Parameter + MaxEncodedLen + Copy + Clone + Eq + TypeInfo;
+		type PaymentCurrency: Currency<Self::AccountId> + Clone + Eq;
+		#[pallet::constant]
+		type MaxPaymentsScheduled: Get<u32>;
+		type TimeProvider: UnixTime;
+	}
+
+	#[pallet::pallet]
+	#[pallet::without_storage_info]
+	pub struct Pallet<T>(_);
+
+
+	#[pallet::storage]
+	#[pallet::getter(fn payment_agreements)]
+	pub type PaymentAgreements<T: Config> = StorageNMap<
+		_,
+		(
+			NMapKey<Blake2_128Concat, T::AccountId>, // payer_account
+			NMapKey<Blake2_128Concat, T::AccountId>, // payee_account
+			NMapKey<Blake2_128Concat, T::PaymentId>, // paymentId
+		),
+		PaymentDetails<T>,
+		OptionQuery,
+	>;
+
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		PaymentInitialized(T::AccountId, T::AccountId, BalanceOf<T>),
+		PartOfPaymentClaimed(T::AccountId, BalanceOf<T>)
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		NoneValue,
+		PaymentDetailsNonExistent,
+		NoScheduledPaymentRecorded,
+		PaymentNotReleased,
+		PaymentAlreadyInitialized,
+		PaymentNotAvailable,
+	}
+
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		#[pallet::weight(50_000_000)]
+		pub fn claim (
+			origin: OriginFor<T>, 
+			payer_id: T::AccountId,
+			payment_id: T::PaymentId,
+		) -> DispatchResult {
+			let payee = ensure_signed(origin)?;
+			<PaymentAgreements<T>>::try_mutate(
+				(&payer_id, &payee.clone(), &payment_id), 
+				| maybe_payment_agreements | -> DispatchResult {
+					let payment_details = 
+						maybe_payment_agreements
+						.as_mut()
+						.ok_or(<Error<T>>::PaymentDetailsNonExistent)?;
+					let payment_schedule = &mut payment_details.payment_schedule;
+					ensure!(
+						!payment_schedule.is_empty(), 
+						<Error<T>>::NoScheduledPaymentRecorded
+					);
+					let next_payment = payment_schedule.first().ok_or(
+						<Error<T>>::NoScheduledPaymentRecorded
+					)?;
+					let time: u64 = T::TimeProvider::now().as_secs();
+					ensure!(
+						time >= next_payment.payment_date, 
+						<Error<T>>::PaymentNotAvailable
+					);
+					let payment_amount = next_payment.amount_per_claim;
+					let payment_method = &payment_details.payment_method;
+					let payment_account_id = &payment_method.account_id;
+					ensure!(next_payment.released, <Error<T>>::PaymentNotReleased);
+					T::PaymentCurrency::transfer(
+						&payment_account_id,
+						&payee,
+						payment_amount,
+						AllowDeath,
+					)?;
+					payment_schedule.remove(0);
+					Self::deposit_event(
+						Event::PartOfPaymentClaimed(payee, payment_amount)
+					);
+					Ok(())
+				}
+			)?;
+			Ok(())
+		}
+
+		#[pallet::weight(60_000_000)]
+		pub fn initialize_payment (
+			origin: OriginFor<T>, 
+			payee: T::AccountId,
+			payment_id: T::PaymentId,
+			rfp_reference_id: T::RFPReferenceId,
+			total_payment_amount: BalanceOf<T>,
+			payment_schedule: BoundedVec<ScheduledPayment<T>, T::MaxPaymentsScheduled>,
+			payment_method: PaymentMethod<T>,
+			administrator_id: T::AccountId,
+		) -> DispatchResult {
+			let payer = ensure_signed(origin)?;
+			let payment_details = <PaymentAgreements<T>>::get(
+				(&payer, &payee, &payment_id)
+			);
+			ensure!(
+				payment_details.is_none(),
+				Error::<T>::PaymentAlreadyInitialized
+			);
+
+			let payment_details = PaymentDetails {
+				payer: payer.clone(),
+				payee: payee.clone(),
+				payment_id: payment_id.clone(),
+				rfp_reference_id,
+				total_payment_amount,
+				payment_schedule,
+				payment_method: payment_method.clone(),
+				administrator_id,
+			};
+			<PaymentAgreements<T>>::insert(
+				(&payer, &payee, payment_id), 
+				payment_details
+			);
+			Self::deposit_event(
+				Event::PaymentInitialized(
+					payment_method.account_id, 
+					payee, 
+					total_payment_amount
+				)
+			);
+			
+			Ok(())
+		}
+	}
+}

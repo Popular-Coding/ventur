@@ -7,7 +7,7 @@
 
 ```bash
 # Fetch the code
-git clone https://github.com/PopularCoding/ventur
+git clone git clone https://github.com/Popular-Coding/ventur.git
 cd ventur
 
 # Build the node (this may take some time)

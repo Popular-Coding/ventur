@@ -2,6 +2,7 @@
 members = [
     "node",
     "pallets/escrow",
+    "pallets/payments",
     "runtime",
 ]
 [profile.release]
