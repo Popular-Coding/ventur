@@ -228,30 +228,12 @@ pub mod pallet {
 			payment_id: T::PaymentId,
 		) -> DispatchResult {
 			let payer = ensure_signed(origin)?;
-			<PaymentAgreements<T>>::try_mutate(
-				(&payer.clone(), &payee_id, &payment_id), 
-				| maybe_payment_agreements | -> DispatchResult {
-					let payment_details = 
-						&mut maybe_payment_agreements
-						.as_mut()
-						.ok_or(<Error<T>>::PaymentDetailsNonExistent)?;
-					let payment_schedule = &mut payment_details.payment_schedule;
-					ensure!(
-						!payment_schedule.is_empty(), 
-						<Error<T>>::NoScheduledPaymentRecorded
-					);
-					let next_payment = &mut payment_schedule.get_mut(0)
-						.ok_or(
-						<Error<T>>::NoScheduledPaymentRecorded
-					)?;
-					next_payment.released = false;
-					Self::deposit_event(
-						Event::NextPaymentReleaseStatusChanged(payer, payment_id.clone(), false)
-					);
-					Ok(())
-				}
-			)?;
-			Ok(())
+			Pallet::<T>::change_next_payment_release_status(
+				&payer,
+				&payee_id,
+				&payment_id,
+				false
+			)
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
@@ -261,6 +243,22 @@ pub mod pallet {
 			payment_id: T::PaymentId,
 		) -> DispatchResult {
 			let payer = ensure_signed(origin)?;
+			Pallet::<T>::change_next_payment_release_status(
+				&payer,
+				&payee_id,
+				&payment_id,
+				true
+			)
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn change_next_payment_release_status(
+			payer: &T::AccountId,
+			payee_id: &T::AccountId,
+			payment_id: &T::PaymentId,
+			released: bool 
+		) -> DispatchResult {
 			<PaymentAgreements<T>>::try_mutate(
 				(&payer.clone(), &payee_id, &payment_id), 
 				| maybe_payment_agreements | -> DispatchResult {
@@ -277,9 +275,13 @@ pub mod pallet {
 						.ok_or(
 						<Error<T>>::NoScheduledPaymentRecorded
 					)?;
-					next_payment.released = true;
+					next_payment.released = released;
 					Self::deposit_event(
-						Event::NextPaymentReleaseStatusChanged(payer, payment_id.clone(), true)
+						Event::NextPaymentReleaseStatusChanged(
+							payer.clone(), 
+							payment_id.clone(), 
+							released
+						)
 					);
 					Ok(())
 				}

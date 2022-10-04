@@ -1,12 +1,17 @@
 
 use crate::*;
-use crate::{self as pallet_payments};
-use frame_support::traits::Currency;
-use crate::{Config as MyConfig};
-use frame_support::{assert_noop, assert_ok};
+use crate::{
+    self as pallet_payments,
+    Config as MyConfig
+};
+use frame_support::{
+    assert_noop, 
+    assert_ok,
+    traits::{
+        Currency,
+    }
+};
 use mock::*;
-pub use frame_support::traits::ConstU32;
-pub use pallet_timestamp::*;
 use frame_support::bounded_vec;
 use pallet_timestamp::{self as timestamp};
 
