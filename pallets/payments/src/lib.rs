@@ -41,27 +41,67 @@ pub mod pallet {
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
 	#[scale_info(skip_type_params(T))]
+	// The struct that stores info about the payment agreement
+	// between two parties
 	pub struct PaymentDetails<T: Config>{
+
+		// The paying party of the payment contract
+		// Note: If, for example, the payment is coming from
+		// an escrow account, this won't be the account from
+		// which the payment is coming
 		pub(super) payer: T::AccountId,
+
+		// Which account the funds will be transferred to
 		pub(super) payee: T::AccountId,
+
+		// The UID for payments, used for identifying this 
+		// payment agreement
 		pub(super) payment_id: T::PaymentId,
+
+		// The id of the RFP associated with this payment
+		// agreement
 		pub(super) rfp_reference_id: T::RFPReferenceId,
+
+		// The total payment amount that will be paid
+		// out to the payee
 		pub(super) total_payment_amount: BalanceOf<T>,
-		pub(super) payment_schedule: BoundedVec<ScheduledPayment<T>, T::MaxPaymentsScheduled>,
+
+		// This bounded vec allows payments to be paid 
+		// out in installments
+		pub(super) payment_schedule: 
+			BoundedVec<
+				ScheduledPayment<T>, T::MaxPaymentsScheduled
+			>,
+
+		// A struct describing where the payment will 
+		// be coming from 
 		pub(super) payment_method: PaymentMethod<T>,
+
+		// The id of the admin of this payment agreement
+		// Admins will have special privileges w.r.t.
+		// modifying payments
 		pub(super) administrator_id: T::AccountId,
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
 	#[scale_info(skip_type_params(T))]
+	// An instance of a payment that is to be issued and claimed
 	pub struct ScheduledPayment<T: Config> {
+		// When the payment will be eligible for claiming
 		pub(super) payment_date: u64,
+
+		// How much of the total amount can be claimed with
+		// this instance of payment
 		pub(super) amount_per_claim: BalanceOf<T>,
+
+		// If false, this instance is not eligible for claim
 		pub(super) released: bool,
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound,  PartialEq, scale_info::TypeInfo)]
 	#[scale_info(skip_type_params(T))]
+	// Whether the payment is coming from a personal or an
+	// escrow account
 	pub enum PaymentSource {
 		#[default]
 		PersonalAccount,
@@ -72,6 +112,8 @@ pub mod pallet {
 	#[scale_info(skip_type_params(T))]
 	pub struct PaymentMethod<T: Config> {
 		pub(super) payment_source: PaymentSource,
+
+		// The account from which the transfer is to be drawn
 		pub(super) account_id: T::AccountId,
 	}
 
@@ -98,6 +140,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn payment_agreements)]
+	// Here we store all payment agreements
+	// Key: (payer, payee, payment_id)
+	// Value: Payment Details
 	pub type PaymentAgreements<T: Config> = StorageNMap<
 		_,
 		(
@@ -119,11 +164,21 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		NoneValue,
+		// Payment doesn't exist in storage with the specified key
 		PaymentDetailsNonExistent,
+
+		// There is no scheduled payment in the payment agreements
 		NoScheduledPaymentRecorded,
+
+		// The payment has not been released, or has been blocked by
+		// the payer
 		PaymentNotReleased,
+
+		// A payment agreement with the specified key already exists
 		PaymentAlreadyInitialized,
+
+		// The scheduled date for payment has not passed yet, 
+		// meaning the payment cannot be claimed
 		PaymentNotAvailable,
 	}
 
@@ -148,9 +203,13 @@ pub mod pallet {
 						!payment_schedule.is_empty(), 
 						<Error<T>>::NoScheduledPaymentRecorded
 					);
+
+					// Try to claim the next payment
 					let next_payment = payment_schedule.first().ok_or(
 						<Error<T>>::NoScheduledPaymentRecorded
 					)?;
+
+					// Deny the payment if it is before the due date
 					let time: u64 = T::TimeProvider::now().as_secs();
 					ensure!(
 						time >= next_payment.payment_date, 
@@ -166,6 +225,8 @@ pub mod pallet {
 						payment_amount,
 						AllowDeath,
 					)?;
+					
+					// If successfully claimed, get rid of the first payment
 					payment_schedule.remove(0);
 					Self::deposit_event(
 						Event::PartOfPaymentClaimed(payee, payment_amount)
@@ -275,6 +336,8 @@ pub mod pallet {
 						.ok_or(
 						<Error<T>>::NoScheduledPaymentRecorded
 					)?;
+
+					// Modify the release of the next payment
 					next_payment.released = released;
 					Self::deposit_event(
 						Event::NextPaymentReleaseStatusChanged(
