@@ -113,7 +113,8 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		PaymentInitialized(T::AccountId, T::AccountId, BalanceOf<T>),
-		PartOfPaymentClaimed(T::AccountId, BalanceOf<T>)
+		PartOfPaymentClaimed(T::AccountId, BalanceOf<T>),
+		NextPaymentReleaseStatusChanged(T::AccountId, T::PaymentId, bool),
 	}
 
 	#[pallet::error]
@@ -128,7 +129,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn claim (
 			origin: OriginFor<T>, 
 			payer_id: T::AccountId,
@@ -175,7 +176,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(60_000_000)]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn initialize_payment (
 			origin: OriginFor<T>, 
 			payee: T::AccountId,
@@ -217,6 +218,39 @@ pub mod pallet {
 				)
 			);
 			
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn block_next_payment (
+			origin: OriginFor<T>, 
+			payee_id: T::AccountId,
+			payment_id: T::PaymentId,
+		) -> DispatchResult {
+			let payer = ensure_signed(origin)?;
+			<PaymentAgreements<T>>::try_mutate(
+				(&payer.clone(), &payee_id, &payment_id), 
+				| maybe_payment_agreements | -> DispatchResult {
+					let payment_details = 
+						&mut maybe_payment_agreements
+						.as_mut()
+						.ok_or(<Error<T>>::PaymentDetailsNonExistent)?;
+					let payment_schedule = &mut payment_details.payment_schedule;
+					ensure!(
+						!payment_schedule.is_empty(), 
+						<Error<T>>::NoScheduledPaymentRecorded
+					);
+					let next_payment = &mut payment_schedule.get_mut(0)
+						.ok_or(
+						<Error<T>>::NoScheduledPaymentRecorded
+					)?;
+					next_payment.released = false;
+					Self::deposit_event(
+						Event::NextPaymentReleaseStatusChanged(payer, payment_id.clone(), true)
+					);
+					Ok(())
+				}
+			)?;
 			Ok(())
 		}
 	}

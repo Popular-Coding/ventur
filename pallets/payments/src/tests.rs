@@ -218,3 +218,62 @@ fn test_claim_fails_before_payment_date() {
         );
     });
 }
+
+#[test]
+fn test_block_and_unblock_payment() {
+    let mut t = test_externalities();
+    t.execute_with(|| {
+        assert!(System::events().is_empty());
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &ESCROW_ACCOUNT_ID, 
+            TOTAL_PAYMENT_AMOUNT
+        );
+        let time: u64 = <timestamp::Pallet<Test>>::now();
+        let scheduled_payment = pallet_payments::ScheduledPayment::<Test> {
+            payment_date: time,
+            amount_per_claim: TOTAL_PAYMENT_AMOUNT / 2,
+            released: true,
+        };
+        let payment_schedule = bounded_vec![
+            scheduled_payment.clone(), 
+        ];
+        let payment_method = pallet_payments::PaymentMethod::<Test>{
+            payment_source: pallet_payments::PaymentSource::EscrowAccount,
+            account_id: ESCROW_ACCOUNT_ID,
+        };
+        assert_ok!(Payments::initialize_payment(
+            Origin::signed(PAYER_ID),
+            PAYEE_ID,
+            PAYMENT_ID,
+            RFP_REFERENCE_ID,
+            TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method.clone(),
+            ADMINISTRATOR_ID,
+        ));
+        assert_ok!(
+            Payments::block_next_payment(
+                Origin::signed(PAYER_ID),
+                PAYEE_ID,
+                PAYMENT_ID,
+            )
+        );
+        let expected_event = 
+            crate::Event::NextPaymentReleaseStatusChanged(
+                PAYER_ID, 
+                PAYMENT_ID,
+                true
+            );
+        System::assert_last_event(mock::Event::Payments(expected_event));
+        let payment_agreements = Payments::payment_agreements(
+            (PAYER_ID, PAYEE_ID, PAYMENT_ID)
+        ).unwrap();
+        let remaining_scheduled_payments = payment_agreements.payment_schedule;
+        assert_eq!(remaining_scheduled_payments.len(), 1);
+        assert_eq!(
+            remaining_scheduled_payments.first().unwrap().released, 
+            false,
+        );
+    });
+}
+
