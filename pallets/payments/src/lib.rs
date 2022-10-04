@@ -246,6 +246,39 @@ pub mod pallet {
 					)?;
 					next_payment.released = false;
 					Self::deposit_event(
+						Event::NextPaymentReleaseStatusChanged(payer, payment_id.clone(), false)
+					);
+					Ok(())
+				}
+			)?;
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn release_next_payment (
+			origin: OriginFor<T>, 
+			payee_id: T::AccountId,
+			payment_id: T::PaymentId,
+		) -> DispatchResult {
+			let payer = ensure_signed(origin)?;
+			<PaymentAgreements<T>>::try_mutate(
+				(&payer.clone(), &payee_id, &payment_id), 
+				| maybe_payment_agreements | -> DispatchResult {
+					let payment_details = 
+						&mut maybe_payment_agreements
+						.as_mut()
+						.ok_or(<Error<T>>::PaymentDetailsNonExistent)?;
+					let payment_schedule = &mut payment_details.payment_schedule;
+					ensure!(
+						!payment_schedule.is_empty(), 
+						<Error<T>>::NoScheduledPaymentRecorded
+					);
+					let next_payment = &mut payment_schedule.get_mut(0)
+						.ok_or(
+						<Error<T>>::NoScheduledPaymentRecorded
+					)?;
+					next_payment.released = true;
+					Self::deposit_event(
 						Event::NextPaymentReleaseStatusChanged(payer, payment_id.clone(), true)
 					);
 					Ok(())

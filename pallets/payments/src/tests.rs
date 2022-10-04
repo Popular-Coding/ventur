@@ -262,9 +262,18 @@ fn test_block_and_unblock_payment() {
             crate::Event::NextPaymentReleaseStatusChanged(
                 PAYER_ID, 
                 PAYMENT_ID,
-                true
+                false
             );
+        
         System::assert_last_event(mock::Event::Payments(expected_event));
+        assert_noop!(
+            Payments::claim(
+                Origin::signed(PAYEE_ID),
+                PAYER_ID, 
+                PAYMENT_ID
+            ),
+            Error::<Test>::PaymentNotReleased
+        );
         let payment_agreements = Payments::payment_agreements(
             (PAYER_ID, PAYEE_ID, PAYMENT_ID)
         ).unwrap();
@@ -273,6 +282,21 @@ fn test_block_and_unblock_payment() {
         assert_eq!(
             remaining_scheduled_payments.first().unwrap().released, 
             false,
+        );
+
+        assert_ok!(
+            Payments::release_next_payment(
+                Origin::signed(PAYER_ID),
+                PAYEE_ID,
+                PAYMENT_ID,
+            )
+        );
+        assert_ok!(
+            Payments::claim(
+                Origin::signed(PAYEE_ID),
+                PAYER_ID, 
+                PAYMENT_ID
+            )
         );
     });
 }
