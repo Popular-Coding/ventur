@@ -9,7 +9,7 @@ use frame_support::{
     assert_ok,
     traits::{
         Currency,
-    }
+    },
 };
 use mock::*;
 use frame_support::bounded_vec;
