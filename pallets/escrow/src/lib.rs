@@ -13,7 +13,7 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, sp_std::vec, traits::{Currency}};
+	use frame_support::{pallet_prelude::*, sp_std::vec, traits::{Currency}, sp_runtime::{traits::Zero, SaturatedConversion}};
 	use frame_system::pallet_prelude::*;
 
 	pub const VEC_LIMIT: u32 = 100; // TODO: Update this bounding upper limit after testing
@@ -26,17 +26,19 @@ pub mod pallet {
 	}
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-	pub struct Contribution<AccountId>  {
+	#[scale_info(skip_type_params(T))]
+	pub struct Contribution<AccountId, T: Config>  {
 		pub(super) contributor: AccountId,
-		pub(super) amount: u32,  // ToDo: Change to balance
+		pub(super) amount: BalanceOf<T>,  // ToDo: Change to balance
 	}
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-	pub struct EscrowDetails<AccountId> {
+	#[scale_info(skip_type_params(T))]
+	pub struct EscrowDetails<AccountId, T:Config> {
 		pub(super) owner: AccountId,
 		pub(super) admins: BoundedVec<AccountId, ConstU32<{VEC_LIMIT}>>,
-		pub(super) contributions: BoundedVec<Contribution<AccountId>, ConstU32<{VEC_LIMIT}>>,
-		pub(super) amount: u32,
-		pub(super) total_contributed: u32,
+		pub(super) contributions: BoundedVec<Contribution<AccountId, T>, ConstU32<{VEC_LIMIT}>>,
+		pub(super) amount: BalanceOf<T>,
+		pub(super) total_contributed: BalanceOf<T>,
 		pub(super) is_frozen: bool,
 		pub(super) is_open: bool,
 	}
@@ -47,7 +49,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn escrow)]
-	pub(super) type Escrow<T: Config> = StorageMap<_, Blake2_128Concat, T::EscrowId, EscrowDetails<T::AccountId>, OptionQuery>;
+	pub(super) type Escrow<T: Config> = StorageMap<_, Blake2_128Concat, T::EscrowId, EscrowDetails<T::AccountId, T>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn administrator)]
@@ -67,9 +69,9 @@ pub mod pallet {
 		// Creates Escrow Object, notes created Escrow and Admin account
 		CreateEscrow(T::EscrowId, T::AccountId),
 		// Adds Funds to Escrow Object, notes Escrow Id, contributing Account Id, and the amount contributed
-		FundEscrow(T::EscrowId, T::AccountId, u32),
+		FundEscrow(T::EscrowId, T::AccountId, BalanceOf<T>),
 		// Paysout Funds from Escrow Object, notes Escrow Id, receiving Account Id, and the amount distributed
-		PayoutEscrow(T::EscrowId, T::AccountId, T::AccountId, u32),
+		PayoutEscrow(T::EscrowId, T::AccountId, T::AccountId, BalanceOf<T>),
 		// Closes the escrow, notes the escrow Id and admin id (this results in the dispersment of remaining funds among contributors proportionate to contributions)
 		CloseEscrow(T::EscrowId, T::AccountId),
 		// Sets the open bool to true and allows for any account to Fund the Escrow
@@ -121,15 +123,15 @@ pub mod pallet {
 
 			// Insert new Escrow and Administrator into Storage
 			let bounded: BoundedVec<T::AccountId, ConstU32<{VEC_LIMIT}>> = vec![who.clone()].try_into().unwrap();
-			let contributions: BoundedVec<Contribution<T::AccountId>, ConstU32<{VEC_LIMIT}>> = vec![].try_into().unwrap();
+			let contributions: BoundedVec<Contribution<T::AccountId, T>, ConstU32<{VEC_LIMIT}>> = vec![].try_into().unwrap();
 			<Escrow<T>>::insert(
 				escrow_id, 
 				EscrowDetails {
 					owner: who.clone(),
 					admins: bounded.clone(),
 					contributions: contributions.clone(),
-					amount: 0,
-					total_contributed: 0,
+					amount: BalanceOf::<T>::zero(),
+					total_contributed: BalanceOf::<T>::zero(),
 					is_frozen: false,
 					is_open: false,
 				});
@@ -147,7 +149,7 @@ pub mod pallet {
 
 		/// A dispatchable to fund an escrow
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn fund_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId, amount: u32) -> DispatchResult {
+		pub fn fund_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
 			
@@ -200,7 +202,7 @@ pub mod pallet {
 
 		/// A dispatchable to fund an escrow
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn payout_escrow(origin: OriginFor<T>, payee: T::AccountId, escrow_id: T::EscrowId, amount: u32) -> DispatchResult {
+		pub fn payout_escrow(origin: OriginFor<T>, payee: T::AccountId, escrow_id: T::EscrowId, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
 			
