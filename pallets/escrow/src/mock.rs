@@ -84,7 +84,7 @@ impl pallet_balances::Config for Test {
 
 impl pallet_escrow::Config for Test {
 	type Event = Event;
-	type EscrowId = u32;
+	type EscrowId = AccountId;
 	type PaymentCurrency = Balances;
 }
 
