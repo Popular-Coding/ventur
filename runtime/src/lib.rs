@@ -271,7 +271,7 @@ impl pallet_sudo::Config for Runtime {
 /// Configure the escrow pallet in pallets/escrow.
 impl pallet_escrow::Config for Runtime {
 	type Event = Event;
-	type EscrowId = u32;
+	type EscrowId = AccountId;
 	type PaymentCurrency = Balances;
 }
 
