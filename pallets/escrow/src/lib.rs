@@ -112,7 +112,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// A dispatchable to create an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn create_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -151,7 +151,7 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to fund an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn fund_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let funder = ensure_signed(origin)?;
@@ -275,7 +275,7 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to close an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn close_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -338,7 +338,7 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to freeze an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn enable_open_contribution(origin: OriginFor<T>, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -380,7 +380,7 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to thaw an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn disable_open_contribution(origin: OriginFor<T>, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -422,7 +422,7 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to freeze an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn freeze_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -464,7 +464,7 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to thaw an escrow
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn thaw_escrow(origin: OriginFor<T>, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -506,7 +506,7 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to add an administrator
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn add_admin(origin: OriginFor<T>, new_admin: T::AccountId, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
@@ -561,7 +561,7 @@ pub mod pallet {
 
 		
 		/// A dispatchable to remove an administrator
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn remove_admin(origin: OriginFor<T>, admin_to_remove: T::AccountId, escrow_id: T::EscrowId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
