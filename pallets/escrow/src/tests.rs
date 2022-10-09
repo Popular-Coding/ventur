@@ -1,11 +1,11 @@
 use crate::{mock::*, Error, Escrow, EscrowDetails};
 use frame_support::{assert_noop,  assert_ok, /* BoundedVec */};
 
-const ESCROW_ID: u32 = 11201;
-const OTHER_ESCROW_ID: u32 = 11232;
+const ESCROW_ID: u64 = 11201;
+const OTHER_ESCROW_ID: u64 = 11232;
 const ACCOUNT_ID: u64 = 1;
 const OTHER_ACCOUNT_ID: u64 = 2;
-const AMOUNT: u128 = 100;
+const AMOUNT: u128 = 10000;
 
 /// Trivial Extrinsic Execution Tests
 #[test]
