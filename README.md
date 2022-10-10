@@ -91,5 +91,5 @@ Unit tests can be run locally using the ``` cargo test ``` command
 Pallets:
 - Payment-Contracts
 - Escrow
-- NT-NFT
-- RFP-Process
+- NT-NFT (Targeted for Milestone 2)
+- RFP-Process (Targeted for Milestone 2)
