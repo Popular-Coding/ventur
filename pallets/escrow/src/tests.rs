@@ -1,11 +1,11 @@
-use crate::{mock::*, Error, Escrow, EscrowDetails};
+use crate::{mock::*, Error, /* Escrow, */ EscrowDetails};
 use frame_support::{assert_noop,  assert_ok, /* BoundedVec */};
 
-const ESCROW_ID: u32 = 11201;
-const OTHER_ESCROW_ID: u32 = 11232;
+const ESCROW_ID: u64 = 11201;
+const OTHER_ESCROW_ID: u64 = 11232;
 const ACCOUNT_ID: u64 = 1;
 const OTHER_ACCOUNT_ID: u64 = 2;
-const AMOUNT: u32 = 100;
+const AMOUNT: u128 = 10000;
 
 /// Trivial Extrinsic Execution Tests
 #[test]
@@ -80,18 +80,18 @@ fn correct_storage_for_create_escrow() {
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID), ESCROW_ID));
 		// Read pallet storage and assert an expected result.
 		let admins = vec![ACCOUNT_ID].try_into().unwrap();
-		let contributors = vec![].try_into().unwrap();
+		let contributions = vec![].try_into().unwrap();
 		let escrow_details = EscrowDetails{
 			owner: ACCOUNT_ID,
 			admins: admins,
-			contributors: contributors,
+			contributions: contributions,
 			amount: 0,
 			total_contributed: 0,
 			is_frozen: false,
 			is_open: false,
 		};
 		assert_eq!(EscrowModule::escrow(ESCROW_ID), Some(escrow_details.clone()));
-		assert_eq!(EscrowModule::administrator(ACCOUNT_ID, ESCROW_ID), Some(escrow_details.clone()));
+		assert!(EscrowModule::administrator(ACCOUNT_ID, ESCROW_ID).is_some());
 	});
 }
 

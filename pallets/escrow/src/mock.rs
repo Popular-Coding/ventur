@@ -9,12 +9,7 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-use sp_runtime::{
-	traits::{IdentifyAccount, Verify},
-	MultiSignature,
-};
-pub type Signature = MultiSignature;
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -84,11 +79,18 @@ impl pallet_balances::Config for Test {
 
 impl pallet_escrow::Config for Test {
 	type Event = Event;
-	type EscrowId = u32;
+	type EscrowId = u64;
 	type PaymentCurrency = Balances;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	// Create Test Storage
+	let mut test_externalities = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	// Create account balances for use in tests
+	pallet_balances::GenesisConfig::<Test> {
+        balances: vec![(1, 200000000)],
+    }.assimilate_storage(&mut test_externalities)
+    .unwrap();
+    test_externalities.into()
 }
