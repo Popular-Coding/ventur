@@ -1,4 +1,4 @@
-use crate::{mock::*, Error, Escrow, EscrowDetails};
+use crate::{mock::*, Error, /* Escrow, */ EscrowDetails};
 use frame_support::{assert_noop,  assert_ok, /* BoundedVec */};
 
 const ESCROW_ID: u64 = 11201;
