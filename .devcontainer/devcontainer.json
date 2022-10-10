@@ -1,5 +1,5 @@
 {
-  "name": "Substrate Node template",
+  "name": "Ventur Node",
   "context": "..",
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash",
