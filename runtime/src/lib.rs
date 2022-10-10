@@ -47,7 +47,7 @@ pub use sp_runtime::{Perbill, Permill};
 pub use pallet_escrow;
 
 /// Import the payments pallet.
-// pub use pallet_payments;
+pub use pallet_payments;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -276,14 +276,14 @@ impl pallet_escrow::Config for Runtime {
 }
 
 // Configure the payments contract pallet in pallets/payments
-/* impl pallet_payments::Config for Runtime {
+impl pallet_payments::Config for Runtime {
 	type Event = Event;
 	type PaymentId = u32;
 	type RFPReferenceId = u32;
 	type PaymentCurrency = Balances;
 	type MaxPaymentsScheduled = ConstU32<50>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
-} */
+} 
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -303,7 +303,7 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-escrow and pallet-payments in the runtime.
 		Escrow: pallet_escrow,
-		// Payments: pallet_payments,
+		Payments: pallet_payments,
 	}
 );
 
@@ -349,7 +349,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_escrow, Escrow]
-		// [pallet_payments, Payments]
+		[pallet_payments, Payments]
 	);
 }
 
