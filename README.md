@@ -74,7 +74,14 @@ RUST_BACKTRACE=1 ./target/release/ventur-node -1debug --dev
 
 ## Running a Ventur Node (Docker)
 
-``` ### PROCESSING ```
+First, install [Docker](https://docs.docker.com/get-docker/) and
+[Docker Compose](https://docs.docker.com/compose/install/).
+
+Then run the following command to start a single node development chain.
+
+```bash
+./scripts/docker_run.sh
+```
 
 ## Run Tests
 
@@ -84,5 +91,5 @@ Unit tests can be run locally using the ``` cargo test ``` command
 Pallets:
 - Payment-Contracts
 - Escrow
-- NT-NFT
-- RFP-Process
+- NT-NFT (Targeted for Milestone 2)
+- RFP-Process (Targeted for Milestone 2)
