@@ -1,7 +1,15 @@
 # ![Ventur](media/ventur-cover.webp)
 
+<div align="center">
+
+[![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![Unit Tests](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml) [![Cargo Check Release](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml)
+
+</div>
 
 **A Business and Professional Enablement [Parachain](https://polkadot.network/technology/) built with [Substrate](https://substrate.dev).**
+
+
 
 ## Running a Ventur Node (Ubuntu)
  
