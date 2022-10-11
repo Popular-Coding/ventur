@@ -283,7 +283,7 @@ impl pallet_payments::Config for Runtime {
 	type PaymentCurrency = Balances;
 	type MaxPaymentsScheduled = ConstU32<50>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
-}
+} 
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(

@@ -39,7 +39,7 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
 	// The struct that stores info about the payment agreement
 	// between two parties
@@ -83,7 +83,7 @@ pub mod pallet {
 		pub(super) administrator_id: T::AccountId,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
 	// An instance of a payment that is to be issued and claimed
 	pub struct ScheduledPayment<T: Config> {
@@ -98,8 +98,7 @@ pub mod pallet {
 		pub(super) released: bool,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound,  PartialEq, scale_info::TypeInfo)]
-	#[scale_info(skip_type_params(T))]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound,  PartialEq, TypeInfo)]
 	// Whether the payment is coming from a personal or an
 	// escrow account
 	pub enum PaymentSource {
@@ -108,7 +107,7 @@ pub mod pallet {
 		EscrowAccount,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, scale_info::TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
 	pub struct PaymentMethod<T: Config> {
 		pub(super) payment_source: PaymentSource,
@@ -125,8 +124,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type PaymentId: Member + Parameter + Clone + Eq;
-		type RFPReferenceId: Member + Parameter + MaxEncodedLen + Copy + Clone + Eq + TypeInfo;
+		type PaymentId: Member + Parameter + From<u32> + Clone + Eq;
+		type RFPReferenceId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type PaymentCurrency: Currency<Self::AccountId> + Clone + Eq;
 		#[pallet::constant]
 		type MaxPaymentsScheduled: Get<u32>;
@@ -185,6 +184,8 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// An extrinsic that transfers the next scheduled payment
+		// to the payee's account, if the payment is available
 		pub fn claim (
 			origin: OriginFor<T>, 
 			payer_id: T::AccountId,
@@ -238,6 +239,8 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// An extrinsic that initializes a payment and commits
+		// it to storage
 		pub fn initialize_payment (
 			origin: OriginFor<T>, 
 			payee: T::AccountId,
@@ -283,6 +286,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// An extrinsic that blocks the next payment from release
 		pub fn block_next_payment (
 			origin: OriginFor<T>, 
 			payee_id: T::AccountId,
@@ -298,6 +302,8 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// An extrinsic that unblocks the next payment, 
+		// allowing it to be claimed
 		pub fn release_next_payment (
 			origin: OriginFor<T>, 
 			payee_id: T::AccountId,

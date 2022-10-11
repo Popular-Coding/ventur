@@ -69,7 +69,7 @@ To purge the development chain's state:
 To Start the development chain with detailed logging. 
 
 ```
-RUST_BACKTRACE=1 ./target/release/ventur-node -1debug --dev
+RUST_BACKTRACE=1 ./target/release/ventur-node -ldebug --dev
 ```
 
 ## Running a Ventur Node (Docker)
