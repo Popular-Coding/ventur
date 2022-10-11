@@ -1,4 +1,4 @@
-name: Check Set-Up & Build
+name: Check Set-Up, Build, and Test
 
 # Controls when the action will run.
 on:
@@ -38,7 +38,7 @@ jobs:
 
       - name: Check Tests
         run: |
-          cargo test
+          SKIP_WASM_BUILD=1 cargo test
 
       # - name: Check Build for Benchmarking
       #   run: >
