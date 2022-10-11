@@ -5,6 +5,14 @@ on:
   # Triggers the workflow on pull request events but only for the master branch
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '.gitignore'
+      - '**/README.md'
+  push:
+    branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
