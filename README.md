@@ -99,18 +99,18 @@ Then run the following command to start a single node development chain.
 ./scripts/docker_run.sh
 ```
 
-## Running a Ventur Node (Docker File)
+## Running a Ventur Node (Dockerfile)
 Clone the repo.
 ```
 git clone https://github.com/PopularCoding/ventur
 
 cd ventur
 ```
-Then run this command to build the dockerfile.
+Then run this command to build the docker image.
 ```
 docker build . -t ventur-node
 ```
-To run the docker file with localhost:9944 published so it can interact with the Polkadot-JS front-end. (single node development chain)
+To run the container with localhost:9944 published so it can interact with the Polkadot-JS front-end. (single node development chain)
 ```
 docker run -p 9944:9944 ventur-node
 ```
