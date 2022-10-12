@@ -40,7 +40,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
  
 ## Build a Ventur Node
  ### Fetch the code
- The following command pulls the ventur-node code from our github repo. 
+ The following command pulls the ventur-node code from our G9ithub repo. 
 
 ```
 git clone https://github.com/PopularCoding/ventur
@@ -80,10 +80,18 @@ To Start the development chain with detailed logging.
 RUST_BACKTRACE=1 ./target/release/ventur-node -ldebug --dev
 ```
 
-## Running a Ventur Node (Docker)
+## Running a Ventur Node (Docker Compose)
 
 First, install [Docker](https://docs.docker.com/get-docker/) and
 [Docker Compose](https://docs.docker.com/compose/install/).
+
+Clone the repo.
+```
+git clone https://github.com/PopularCoding/ventur
+
+cd ventur
+```
+
 
 Then run the following command to start a single node development chain.
 
@@ -91,9 +99,34 @@ Then run the following command to start a single node development chain.
 ./scripts/docker_run.sh
 ```
 
+## Running a Ventur Node (Docker File)
+Clone the repo.
+```
+git clone https://github.com/PopularCoding/ventur
+
+cd ventur
+```
+Then run this command to build the dockerfile.
+```
+docker build . -t ventur-node
+```
+To run the docker file with localhost:9944 published so it can interact with the Polkadot-JS front-end. (single node development chain)
+```
+docker run -p 9944:9944 ventur-node
+```
+
+
+## Connect with Polkadot-JS Apps Front-end
+
+Once the node is running locally, you can connect it with **Polkadot-JS Apps** front-end
+to interact with the development chain. [Click
+here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944)
+
+
+
 ## Run Tests
 
-Unit tests can be run locally using the ``` cargo test ``` command
+Unit tests can be run locally using the ``` cargo test ``` command.
 
 ## Runtime Architecture
 Pallets:
