@@ -130,7 +130,7 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 
 ## Runtime Architecture
 Pallets:
-- Payment-Contracts
-- Escrow
+- Payment-Contracts [(docs)](https://docs.ventur.network/pallet_payments/)
+- Escrow [(docs)](https://docs.ventur.network/pallet_escrow/)
 - NT-NFT (Targeted for Milestone 2)
 - RFP-Process (Targeted for Milestone 2)
