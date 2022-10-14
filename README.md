@@ -79,6 +79,7 @@ To Start the development chain with detailed logging.
 ```
 RUST_BACKTRACE=1 ./target/release/ventur-node -ldebug --dev
 ```
+## Running a Ventur Node (Docker)
 
 ## Running a Ventur Node (Docker Compose)
 
