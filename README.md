@@ -79,8 +79,9 @@ To Start the development chain with detailed logging.
 ```
 RUST_BACKTRACE=1 ./target/release/ventur-node -ldebug --dev
 ```
+## Running a Ventur Node (Docker)
 
-## Running a Ventur Node (Docker Compose)
+### Running a Ventur Node (Docker Compose)
 
 First, install [Docker](https://docs.docker.com/get-docker/) and
 [Docker Compose](https://docs.docker.com/compose/install/).
@@ -99,7 +100,7 @@ Then run the following command to start a single node development chain.
 ./scripts/docker_run.sh
 ```
 
-## Running a Ventur Node (Dockerfile)
+### Running a Ventur Node (Dockerfile)
 Clone the repo.
 ```
 git clone https://github.com/PopularCoding/ventur
