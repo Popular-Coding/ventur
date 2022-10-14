@@ -13,16 +13,29 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, sp_std::vec, traits::{Currency, ExistenceRequirement::AllowDeath}, sp_runtime::{traits::Zero/* , SaturatedConversion */}};
+	use frame_support::{
+		dispatch::DispatchResult,
+		pallet_prelude::*, 
+		sp_std::vec, 
+		traits::{
+			Currency,
+			LockIdentifier,
+			LockableCurrency,
+			WithdrawReasons, 
+			ExistenceRequirement::AllowDeath
+		}, 
+		sp_runtime::{traits::Zero/* , SaturatedConversion */}
+	};
 	use frame_system::pallet_prelude::*;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
+	const ESCROW_LOCK: LockIdentifier = *b"Escrowed";
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type EscrowId: Member + Parameter + MaxEncodedLen + Clone + Eq + TypeInfo + IsType<<Self as frame_system::Config>::AccountId>;
-		type PaymentCurrency: Currency<Self::AccountId>;
+		type PaymentCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 	}
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
