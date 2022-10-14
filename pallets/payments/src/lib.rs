@@ -98,7 +98,7 @@ pub mod pallet {
 		pub(super) released: bool,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound,  PartialEq, TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo)]
 	// Whether the payment is coming from a personal or an
 	// escrow account
 	pub enum PaymentSource {
@@ -221,7 +221,7 @@ pub mod pallet {
 					let payment_account_id = &payment_method.account_id;
 					ensure!(next_payment.released, <Error<T>>::PaymentNotReleased);
 					T::PaymentCurrency::transfer(
-						&payment_account_id,
+						payment_account_id,
 						&payee,
 						payment_amount,
 						AllowDeath,
@@ -280,8 +280,7 @@ pub mod pallet {
 					payee, 
 					total_payment_amount
 				)
-			);
-			
+			);			
 			Ok(())
 		}
 

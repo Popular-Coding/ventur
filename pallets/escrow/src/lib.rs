@@ -131,8 +131,8 @@ pub mod pallet {
 				escrow_id.clone(), 
 				EscrowDetails {
 					owner: who.clone(),
-					admins: admins.clone(),
-					contributions: contributions.clone(),
+					admins,
+					contributions,
 					amount: BalanceOf::<T>::zero(),
 					total_contributed: BalanceOf::<T>::zero(),
 					is_frozen: false,
@@ -190,7 +190,7 @@ pub mod pallet {
 
 					let contribution = Contribution {
 						contributor: funder.clone(),
-						amount: amount,
+						amount,
 					};
 					escrow_details.contributions.try_push(contribution).ok();
 					Ok(())
@@ -244,7 +244,7 @@ pub mod pallet {
 
 			// Confirm distribution is smaller than escrow amount
 			ensure!(
-				(escrow_details.as_ref().unwrap().amount >= amount.clone()),
+				(escrow_details.as_ref().unwrap().amount >= amount),
 				Error::<T>::Unauthorized
 			);
 
