@@ -1,8 +1,6 @@
 use crate::{mock::*, Error, /* Escrow, */ EscrowDetails};
 use frame_support::{assert_noop,  assert_ok, /* BoundedVec */};
 
-const ESCROW_ID: u64 = 11201;
-const OTHER_ESCROW_ID: u64 = 11232;
 const ACCOUNT_ID: u64 = 1;
 const OTHER_ACCOUNT_ID: u64 = 2;
 const AMOUNT: u128 = 10000;
@@ -30,7 +28,7 @@ fn close_escrow_successfully_executes() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::close_escrow(Origin::signed(ACCOUNT_ID), ESCROW_ID));
+		assert_ok!(EscrowModule::close_escrow(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
 	});
 }
 
@@ -39,7 +37,7 @@ fn enable_open_contribution_successfully_executes() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ESCROW_ID));
+		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
 	});
 }
 
@@ -48,8 +46,8 @@ fn disable_open_contribution_successfully_executes() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ESCROW_ID));
-		assert_ok!(EscrowModule::disable_open_contribution(Origin::signed(ACCOUNT_ID), ESCROW_ID));
+		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
+		assert_ok!(EscrowModule::disable_open_contribution(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
 	});
 }
 
@@ -58,7 +56,7 @@ fn freeze_escrow_successfully_executes() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::freeze_escrow(Origin::signed(ACCOUNT_ID), ESCROW_ID));
+		assert_ok!(EscrowModule::freeze_escrow(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
 	});
 }
 
@@ -67,8 +65,8 @@ fn thaw_escrow_successfully_executes() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::freeze_escrow(Origin::signed(ACCOUNT_ID), ESCROW_ID));
-		assert_ok!(EscrowModule::thaw_escrow(Origin::signed(ACCOUNT_ID), ESCROW_ID));
+		assert_ok!(EscrowModule::freeze_escrow(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
+		assert_ok!(EscrowModule::thaw_escrow(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
 	});
 }
 
@@ -89,8 +87,8 @@ fn correct_storage_for_create_escrow() {
 			is_frozen: false,
 			is_open: false,
 		};
-		assert_eq!(EscrowModule::escrow(ESCROW_ID), Some(escrow_details.clone()));
-		assert!(EscrowModule::administrator(ACCOUNT_ID, ESCROW_ID).is_some());
+		assert_eq!(EscrowModule::escrow(ACCOUNT_ID), Some(escrow_details.clone()));
+		assert!(EscrowModule::administrator(ACCOUNT_ID, ACCOUNT_ID).is_some());
 	});
 }
 
@@ -101,7 +99,7 @@ fn correct_error_for_unauthorized_fund_escrow() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_noop!(EscrowModule::fund_escrow(Origin::signed(OTHER_ACCOUNT_ID), ESCROW_ID, AMOUNT), Error::<Test>::Unauthorized);
+		assert_noop!(EscrowModule::fund_escrow(Origin::signed(OTHER_ACCOUNT_ID), ACCOUNT_ID, AMOUNT), Error::<Test>::Unauthorized);
 	});
 }
 
@@ -110,7 +108,7 @@ fn correct_error_for_unauthorized_close_escrow() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_noop!(EscrowModule::close_escrow(Origin::signed(OTHER_ACCOUNT_ID), ESCROW_ID), Error::<Test>::Unauthorized);
+		assert_noop!(EscrowModule::close_escrow(Origin::signed(OTHER_ACCOUNT_ID), ACCOUNT_ID), Error::<Test>::Unauthorized);
 	});
 }
 
@@ -119,7 +117,7 @@ fn correct_error_for_unauthorized_enable_open_contribution() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_noop!(EscrowModule::enable_open_contribution(Origin::signed(OTHER_ACCOUNT_ID), ESCROW_ID), Error::<Test>::Unauthorized);
+		assert_noop!(EscrowModule::enable_open_contribution(Origin::signed(OTHER_ACCOUNT_ID), ACCOUNT_ID), Error::<Test>::Unauthorized);
 	});
 }
 
@@ -128,8 +126,8 @@ fn correct_error_for_unauthorized_disable_open_contribution() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ESCROW_ID));
-		assert_noop!(EscrowModule::disable_open_contribution(Origin::signed(OTHER_ACCOUNT_ID), ESCROW_ID), Error::<Test>::Unauthorized);
+		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
+		assert_noop!(EscrowModule::disable_open_contribution(Origin::signed(OTHER_ACCOUNT_ID), ACCOUNT_ID), Error::<Test>::Unauthorized);
 	});
 }
 
@@ -139,7 +137,7 @@ fn correct_error_for_fund_escrow_with_invalid_escrow() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_noop!(EscrowModule::fund_escrow(Origin::signed(ACCOUNT_ID), OTHER_ESCROW_ID, AMOUNT), Error::<Test>::NoSuchEscrow);
+		assert_noop!(EscrowModule::fund_escrow(Origin::signed(ACCOUNT_ID), OTHER_ACCOUNT_ID, AMOUNT), Error::<Test>::NoSuchEscrow);
 	});
 }
 
@@ -148,7 +146,7 @@ fn correct_error_for_close_escrow_with_invalid_escrow() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_noop!(EscrowModule::close_escrow(Origin::signed(ACCOUNT_ID), OTHER_ESCROW_ID), Error::<Test>::NoSuchEscrow);
+		assert_noop!(EscrowModule::close_escrow(Origin::signed(ACCOUNT_ID), OTHER_ACCOUNT_ID), Error::<Test>::NoSuchEscrow);
 	});
 }
 
@@ -157,7 +155,7 @@ fn correct_error_for_enable_open_contribution_with_invalid_escrow() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_noop!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), OTHER_ESCROW_ID), Error::<Test>::NoSuchEscrow);
+		assert_noop!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), OTHER_ACCOUNT_ID), Error::<Test>::NoSuchEscrow);
 	});
 }
 
@@ -166,7 +164,7 @@ fn correct_error_for_disable_open_contribution_with_invalid_escrow() {
 	new_test_ext().execute_with(|| {
 		// Ensure the expected error is thrown when no value is present.
 		assert_ok!(EscrowModule::create_escrow(Origin::signed(ACCOUNT_ID)));
-		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ESCROW_ID));
-		assert_noop!(EscrowModule::disable_open_contribution(Origin::signed(ACCOUNT_ID), OTHER_ESCROW_ID), Error::<Test>::NoSuchEscrow);
+		assert_ok!(EscrowModule::enable_open_contribution(Origin::signed(ACCOUNT_ID), ACCOUNT_ID));
+		assert_noop!(EscrowModule::disable_open_contribution(Origin::signed(ACCOUNT_ID), OTHER_ACCOUNT_ID), Error::<Test>::NoSuchEscrow);
 	});
 }
