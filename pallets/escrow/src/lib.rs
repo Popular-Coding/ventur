@@ -1,3 +1,57 @@
+// This file is part of Ventur, it implements a multi admin locked fund 
+// account, with configurations for open contribution.
+
+// Copyright (C) 2022 Popular Coding LLC.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+//! # Escrow Pallet
+//!
+//! The Escrow pallet provides functionality for multi admin accounts, with lockable funds, and options for open contribution to the locked funds.
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! The Escrow pallet provides functions for:
+//!
+//! - Creating an Escrow within an AccountId.
+//! - Assigning and Removing Admins that are allowed to manage the Escrow.
+//! - Contributing funds to the Escrow.
+//! - Distributing funds from the Escrow.
+//! - Enabling and Disabling Open (Non Admin) Contributions to the Locked Escrow Funds
+//! - Freezing and Thawing the Escrow.
+//! - Closing the Escrow, and proportionally disbursing the remaining funds back to contributors.
+//! 
+//! ## Interface
+//!
+//! ### Dispatchable Functions
+//!
+//! - `create_escrow` - Creates an Escrow, tied to the calling AccountId.
+//! - `fund_escrow` - Transfers funds to the Escrow Account and Locks the transfered amount.
+//! - `payout_escrow` - Distributes funds from the otherwise locked Escrow funds in an Account.
+//! - `close_escrow` - Closes out an Escrow, by distributing all locked funds out to the contributors, proportionately to their contributions.
+//! - `enable_open_contribution` - Enables non admins to contribute to locked funds using the fund_escrow dispatchable.
+//! - `disable_open_contribution` - Prevents non admins from contributing to locked funds using the fund_escrow dispatchable.
+//! - `freeze_escrow` - Freezes an Escrow, preventing any distributions, contributions, or changes in configuration.
+//! - `thaw_escrow` - Removes a freeze from an Escrow, enabling distributions, contributions, and changes in configuration.
+//! - `add_admin` - Adds an admin to the Escrow's admins.
+//! - `remove_admin` - Removes an admin from the Escrow's admins.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
@@ -76,49 +130,70 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [escrow, who]
-
-		/// Escrow Events
-		// Creates Escrow Object, notes created Escrow and Admin account
+		/// Creates Escrow Object, notes created Escrow and Admin account
+		/// [account]
 		CreateEscrow(T::AccountId),
-		// Adds Funds to Escrow Object, notes Escrow Id, contributing Account Id, and the amount contributed
+		/// Adds Funds to Escrow Object, notes Escrow Id, contributing Account Id, and the amount contributed
+		/// [escrow, who, amount]
 		FundEscrow(T::AccountId, T::AccountId, BalanceOf<T>),
-		// Paysout Funds from Escrow Object, notes Escrow Id, receiving Account Id, and the amount distributed
+		/// Paysout Funds from Escrow Object, notes Escrow Id, receiving Account Id, and the amount distributed
+		/// [escrow, who, payee, amount]
 		PayoutEscrow(T::AccountId, T::AccountId, T::AccountId, BalanceOf<T>),
-		// Closes the escrow, notes the escrow Id and admin id (this results in the dispersment of remaining funds among contributors proportionate to contributions)
+		/// Closes the escrow, notes the escrow Id and admin id (this results in the dispersment of remaining funds among contributors proportionate to contributions)
+		/// [escrow, who]
 		CloseEscrow(T::AccountId, T::AccountId),
-		// Sets the open bool to true and allows for any account to Fund the Escrow
+		/// Sets the open bool to true and allows for any account to Fund the Escrow
+		/// [escrow, who]
 		EnableOpenContribution(T::AccountId, T::AccountId),
-		// Sets the open bool to false and only allows for admin accounts to fund the Escrow
+		/// Sets the open bool to false and only allows for admin accounts to fund the Escrow
+		/// [escrow, who]
 		DisableOpenContribution(T::AccountId, T::AccountId),
-		// Freezes the escrow
+		/// Freezes the escrow
+		/// [escrow, who]
 		FreezeEscrow(T::AccountId, T::AccountId),
-		// Thaws the escrow
+		/// Thaws the escrow
+		/// [escrow, who]
 		ThawEscrow(T::AccountId, T::AccountId),
-		// Adds Administrator
+		/// Adds Administrator
+		/// [escrow, who, new_admin]
 		AddAdministrator(T::AccountId, T::AccountId, T::AccountId),
-		// Remove Administrator
+		/// Remove Administrator
+		/// [escrow, who, admin_to_remove]
 		RemoveAdministrator(T::AccountId, T::AccountId, T::AccountId)
 	}
 
 	// Errors inform users that escrow went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Error on None value
 		NoneValue,
+		/// Error on Storage Overflow
 		StorageOverflow,
+		/// Can not create Escrow that already exists
 		EscrowAlreadyCreated,
+		/// No Escrow exists for the referenced AccountId
 		NoSuchEscrow,
+		/// User is not authorized to perform this action on the escrow
 		Unauthorized,
+		/// Escrow is frozen, no configurations, contributions, or distributions are possible until thawed
 		Frozen,
+		/// Open configuration already enabled
 		OpenAlreadyEnabled,
+		/// Open configuration already disabled
 		OpenAlreadyDisabled,
+		/// Unfrozen Escrow cannot be thawed
 		AlreadyNotFrozen,
+		/// Admins are not allowed to distribute funds to themselves
 		SelfDistributionAttempt,
+		/// The AccountId that was attempted to be added is already an admin
 		AdminAlreadyPresent,
+		/// The AccountId that was attempted to be removed from admin, is already not an admin
 		AdminNotPresent,
+		/// Admin storage mutation failed
 		ErrorOnPushAdmin,
+		/// The Escrow has insufficient funds locked to fulfill the intended transfer
 		InsufficientEscrowFunds,
+		/// Funder has insufficient balance for the intended transfer into the escrow
 		InsufficientBalance,
 	}
 
@@ -217,7 +292,7 @@ pub mod pallet {
 						amount,
 					};
 					escrow_details.contributions.try_push(contribution).ok();
-					
+
 					T::PaymentCurrency::transfer(
 						&funder,
 						&escrow_id,
@@ -380,7 +455,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Dispatchable which allows an escrow admin to freeze an escrow
+		/// Dispatchable which allows an escrow admin to open an account for contributions from non admins
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn enable_open_contribution(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
@@ -422,7 +497,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Dispatchable which allows an escrow admin to thaw an escrow
+		/// Dispatchable which allows an escrow admin to disable contributions from non admins to the locked escrow funds.
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn disable_open_contribution(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
