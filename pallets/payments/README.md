@@ -17,10 +17,16 @@ source ~/.cargo/env
 
 rustup default stable
 
+rustup update stable
+
 rustup update nightly
 
-rustup update stable
- 
+rustup install nightly-2022-09-19 
+
+rustup override set nightly-2022-09-19
+
+rustup target add wasm32-unknown-unknown
+
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
 ## Deploy a Local Ventur Node
