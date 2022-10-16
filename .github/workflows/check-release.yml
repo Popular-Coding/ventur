@@ -36,6 +36,7 @@ jobs:
           source ~/.cargo/env
           rustup default stable
           rustup update stable 
+          rustup update nightly 
           rustup install nightly-2022-09-19 
           rustup override set nightly-2022-09-19
           rustup target add wasm32-unknown-unknown
