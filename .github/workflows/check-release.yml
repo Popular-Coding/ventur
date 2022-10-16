@@ -1,13 +1,17 @@
-name: Check Set-Up & Build
+name: Cargo Check Release
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on pushes
   push:
-    branches-ignore:
-      - main
-  pull_request:
-    branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '.gitignore'
+      - '**/README.md'
+      - '**/tests.re'
+      - '**/mock.rs'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -35,11 +39,6 @@ jobs:
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      - name: Check Build
+      - name: Cargo Check
         run: |
           SKIP_WASM_BUILD=1 cargo check --release
-
-      # - name: Check Build for Benchmarking
-      #   run: >
-      #     pushd node &&
-      #     cargo check --features=runtime-benchmarks --release

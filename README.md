@@ -1,7 +1,15 @@
 # ![Ventur](media/ventur-cover.webp)
 
+<div align="center">
+
+[![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![Unit Tests](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml) [![Cargo Check Release](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml)
+
+</div>
 
 **A Business and Professional Enablement [Parachain](https://polkadot.network/technology/) built with [Substrate](https://substrate.dev).**
+
+
 
 ## Running a Ventur Node (Ubuntu)
  
@@ -32,7 +40,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
  
 ## Build a Ventur Node
  ### Fetch the code
- The following command pulls the ventur-node code from our github repo. 
+ The following command pulls the ventur-node code from our GitHub repo. 
 
 ```
 git clone https://github.com/PopularCoding/ventur
@@ -71,11 +79,20 @@ To Start the development chain with detailed logging.
 ```
 RUST_BACKTRACE=1 ./target/release/ventur-node -ldebug --dev
 ```
-
 ## Running a Ventur Node (Docker)
+
+### Running a Ventur Node (Docker Compose)
 
 First, install [Docker](https://docs.docker.com/get-docker/) and
 [Docker Compose](https://docs.docker.com/compose/install/).
+
+Clone the repo.
+```
+git clone https://github.com/PopularCoding/ventur
+
+cd ventur
+```
+
 
 Then run the following command to start a single node development chain.
 
@@ -83,13 +100,38 @@ Then run the following command to start a single node development chain.
 ./scripts/docker_run.sh
 ```
 
+### Running a Ventur Node (Dockerfile)
+Clone the repo.
+```
+git clone https://github.com/PopularCoding/ventur
+
+cd ventur
+```
+Then run this command to build the docker image.
+```
+docker build . -t ventur-node
+```
+To run the container with localhost:9944 published so it can interact with the Polkadot-JS front-end. (single node development chain)
+```
+docker run -p 9944:9944 ventur-node
+```
+
+
+## Connect with Polkadot-JS Apps Front-end
+
+Once the node is running locally, you can connect it with **Polkadot-JS App** front-end
+to interact with the development chain. [Click
+here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944)
+
+
+
 ## Run Tests
 
-Unit tests can be run locally using the ``` cargo test ``` command
+Unit tests can be run locally using the ``` cargo test ``` command.
 
 ## Runtime Architecture
 Pallets:
-- Payment-Contracts
-- Escrow
+- Payment-Contracts [(docs)](https://docs.ventur.network/pallet_payments/)
+- Escrow [(docs)](https://docs.ventur.network/pallet_escrow/)
 - NT-NFT (Targeted for Milestone 2)
 - RFP-Process (Targeted for Milestone 2)
