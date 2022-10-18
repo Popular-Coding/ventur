@@ -1,6 +1,6 @@
 License: GPLv3
-
-# Escrow Pallet Testing Guide (Ubuntu)
+[Payment Pallet Rust Docs](https://docs.ventur.network/pallet_payments/index.html)
+# Payment Pallet Testing Guide (Ubuntu)
 
 ## Prerequisite Setup
 ### Install Dependencies 
