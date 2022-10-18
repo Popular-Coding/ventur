@@ -1,4 +1,4 @@
-name: Cargo Check Commits
+name: Cargo Check Commit
 
 # Controls when the action will run.
 on:
@@ -13,7 +13,7 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-    branches-ignore: 
+    branches-ignore:
       - main 
 
   # Allows you to run this workflow manually from the Actions tab
@@ -21,22 +21,41 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check-commit:
-    strategy:
-      matrix: 
-        os: [ubuntu-20.04, macos-latest]
-    # The type of runner that the job will run on
-    runs-on: ${{ matrix.os }}
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  check-commit-ubuntu:
+    runs-on: ubuntu-20.04
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Set-up
+      - name: Set-up substrate requirements
         run: |
           sudo apt install -y build-essential
           sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
+
+      - name: Install and configure Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update stable 
+          rustup update nightly 
+          rustup install nightly-2022-09-19 
+          rustup override set nightly-2022-09-19
+          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32-unknown-unknown --toolchain nightly 
+
+      - name: Cargo Check
+        run: |
+          SKIP_WASM_BUILD=1 cargo check --release
+
+  check-commit-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set-up substrate requirements
+        run: |
+          brew update 
+          brew install openssl
 
       - name: Install and configure Rust
         run: |

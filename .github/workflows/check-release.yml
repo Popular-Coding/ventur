@@ -54,31 +54,31 @@ jobs:
 
   check-release-macos:
     runs-on: macos-latest
-      steps:
-        - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v2
 
-        - name: Set-up substrate requirements
-          run: |
-            brew update 
-            brew install openssl
+      - name: Set-up substrate requirements
+        run: |
+          brew update 
+          brew install openssl
 
-        - name: Install and configure Rust
-          run: |
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            source ~/.cargo/env
-            rustup default stable
-            rustup update stable 
-            rustup update nightly 
-            rustup install nightly-2022-09-19 
-            rustup override set nightly-2022-09-19
-            rustup target add wasm32-unknown-unknown
-            rustup target add wasm32-unknown-unknown --toolchain nightly 
+      - name: Install and configure Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update stable 
+          rustup update nightly 
+          rustup install nightly-2022-09-19 
+          rustup override set nightly-2022-09-19
+          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32-unknown-unknown --toolchain nightly 
 
-        - name: Cargo Clippy 
-          run: |
-            cargo clippy
-            cargo clean
+      - name: Cargo Clippy 
+        run: |
+          cargo clippy
+          cargo clean
 
-        - name: Cargo Build
-          run: |
-            cargo build --release
+      - name: Cargo Build
+        run: |
+          cargo build --release
