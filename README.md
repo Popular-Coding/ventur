@@ -135,9 +135,12 @@ here](https://polkadot.js.org/apps/#/explorer?rpc=ws://localhost:9944)
 
 Unit tests can be run locally using the ``` cargo test ``` command.
 
+### Manual Test Guides
+- [Payment-Contracts Pallet Test Guide](/pallets/payments/README.md)
+- [Escrow Pallet Test Guide](/pallets/escrow/README.md)
 ## Runtime Architecture
 Pallets:
-- Payment-Contracts [(docs)](https://docs.ventur.network/pallet_payments/)
+- Payment-Contracts [(docs)](https://docs.ventur.network/pallet_payments/) 
 - Escrow [(docs)](https://docs.ventur.network/pallet_escrow/)
 - NT-NFT (Targeted for Milestone 2)
 - RFP-Process (Targeted for Milestone 2)
