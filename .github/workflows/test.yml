@@ -10,7 +10,10 @@ on:
       - '.vscode/**'
       - 'docs/**'
       - '.gitignore'
-      - '**/README.md'
+      - '**.md'
+      - '**.png'
+      - '**/tests.rs'
+      - '**/mock.rs'
   push:
     branches: [ main ]
 
@@ -19,7 +22,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check:
+  test:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
