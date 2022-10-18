@@ -1,17 +1,22 @@
-License: GPLv3
+# Escrow Pallet
 
-[Escrow Pallet Rust Docs](https://docs.ventur.network/pallet_escrow/index.html)
-# Escrow Pallet Testing Guide (Ubuntu)
+[![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![rustdoc](https://img.shields.io/badge/rustdoc-escrow_pallet-informational)](https://docs.ventur.network/pallet_escrow/index.html)
 
-## Prerequisite Setup
-### Install Dependencies 
-```
+## Escrow Pallet Setup and Testing Guide (Ubuntu)
+
+### Prerequisite Setup
+
+#### Install Dependencies
+
+```bash
 sudo apt install build-essential
 sudo apt install -y git clang curl libssl-dev llvm libudev-dev
 ```
 
-### Install Rust
-```
+#### Install Rust
+
+```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 source ~/.cargo/env
@@ -30,32 +35,40 @@ rustup target add wasm32-unknown-unknown
 
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
-## Deploy a Local Ventur Node
-### Fetch the code
- The following command pulls the ventur-node code from our github repo:
 
-```
+### Deploy a Local Ventur Node
+
+#### Fetch the code
+
+The following command pulls the ventur-node code from our github repo:
+
+```bash
 git clone https://github.com/PopularCoding/ventur
 
 cd ventur
- ```
- 
- ### Run the node
- The following command builds the node. (This may take some time):
- ```
+```
+
+#### Run the node
+
+The following command builds the node. (This may take some time):
+
+```bash
 cargo run --release -- --dev
 ```
 
-## Run Unit Tests
+### Run Unit Tests
+
 Unit tests can be run locally using the following command:
-``` 
+
+``` bash
 cargo test
-``` 
+```
 
-## Manual Test Guide
+### Manual Test Guide
 
-### 1. Start the node
- ```
+#### 1. Start the node
+
+ ```bash
 cargo run --release -- --dev
 ```
 
@@ -63,7 +76,8 @@ cargo run --release -- --dev
 |:--:|
 |![Running the Node](docs/running-node.png)|
 
-### 2. Access the Node through the polkadot.js.org interface
+#### 2. Access the Node through the polkadot.js.org interface
+
 Once you have a ventur node running locally, follow this link:
 [https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer](https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
 
@@ -73,6 +87,7 @@ Once you have a ventur node running locally, follow this link:
 
 _Confirm that you can see the recent blocks listed._
 If you are not able to access the block explorer on polkadot.js.org, you should:
+
 1. Confirm that your Ventur node is running
 2. Check if your Ventur node is running the JSON-RPC WS server on an address and port other than ```127.0.0.1:9944```
     a. If your node is running on a different address and port, update the custom endpoint in polkadot.js.org to the address and port number your node is serving
@@ -81,11 +96,14 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Setting your Custom Endpoint](docs/setting-custom-endpoint.png)|
 
-### 3. Test Creating an Escrow
+#### 3. Test Creating an Escrow
+
 | _Create an Escrow_ |
 |:--:|
 |![Creating an Escrow](docs/create-escrow.png)|
-### 4. Test Funding an Escrow
+
+#### 4. Test Funding an Escrow
+
 First check your account to see the Transferable Balance listed for `Alice`
 | _Check Balance_ |
 |:--:|
@@ -100,8 +118,10 @@ And back in accounts, confirm that the funded amount is now locked for `Alice`
 |:--:|
 |![Confirm Locked Funds](docs/postfunding-escrow.png)|
 
-#### 4.a. Test Open Contributions on an Escrow
-##### 4.a.i. Admin Contribution
+##### 4.a. Test Open Contributions on an Escrow
+
+###### 4.a.i. Admin Contribution
+
 Now that `Alice` has created an Escrow, we can confirm that by default the escrow only allows admin contributions.
 Have `AliceStash` attempt to fund `Alice`'s escrow.  This should bring up an `Unauthorized` error message.
 | _Attempt to Fund `Alice`'s Escrow from `AliceStash`_ |
@@ -123,7 +143,9 @@ Confirm the expected balance change for `Alice` and `AliceStash`.
 | _Confirm Balance of `Alice` and `AliceStash`_ |
 |:--:|
 |![Confirm Balances](docs/confirm-balances.png)|
-##### 4.a.ii. Open Contribution
+
+###### 4.a.ii. Open Contribution
+
 Next confirm the starting balance of `Bob`'s account.
 | _Confirm Balance of `Bob`_ |
 |:--:|
@@ -144,7 +166,9 @@ And confirm the balance changes for `Bob` and `Alice`
 | _Confirm Balance of `Alice` and `AliceStash`_ |
 |:--:|
 |![Confirm Balances](docs/post-open-funding-balance.png)|
-### 5. Test Distributing from an Escrow
+
+#### 5. Test Distributing from an Escrow
+
 Take note of `Charlie`'s balance.
 | _Take note of `Charlie`'s balance_ |
 |:--:|
@@ -157,7 +181,9 @@ Confirm `Charlie` and `Alice`'s balance after distribution.
 | _Confirm Balance of `Charlie`_ |
 |:--:|
 |![Confirm Balances](docs/account-charlie.png)|
-### 6. Test Freezing an Escrow
+
+#### 6. Test Freezing an Escrow
+
 Using `Alice` call the `freezeEscrow` extrinsic.
 | _Freeze `Alice`_ |
 |:--:|
@@ -174,7 +200,9 @@ Attempt to fund `Alice` with `10000000000000000` again.
 | _Attempt to Fund `Alice`_ again |
 |:--:|
 |![Alice Funding Attempt](docs/alice-fund.png)|
-### 7. Test Closing an Escrow
+
+#### 7. Test Closing an Escrow
+
 Using `Alice` call the `closeEscrow` extrinsic.
 | _Close `Alice`_ |
 |:--:|

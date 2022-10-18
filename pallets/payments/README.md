@@ -1,17 +1,22 @@
-License: GPLv3
+# Payment Pallet
 
-[Payment Pallet Rust Docs](https://docs.ventur.network/pallet_payments/index.html)
-# Payment Pallet Testing Guide (Ubuntu)
+[![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![rustdoc](https://img.shields.io/badge/rustdoc-payment_pallet-informational)](https://docs.ventur.network/pallet_payments/index.html)
 
-## Prerequisite Setup
-### Install Dependencies 
-```
+## Payment Pallet Setup and Testing Guide (Ubuntu)
+
+### Prerequisite Setup
+
+#### Install Dependencies
+
+```bash
 sudo apt install build-essential
 sudo apt install -y git clang curl libssl-dev llvm libudev-dev
 ```
 
-### Install Rust
-```
+#### Install Rust
+
+```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 source ~/.cargo/env
@@ -30,32 +35,40 @@ rustup target add wasm32-unknown-unknown
 
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
-## Deploy a Local Ventur Node
-### Fetch the code
+
+### Deploy a Local Ventur Node
+
+#### Fetch the code
+
  The following command pulls the ventur-node code from our github repo:
 
-```
+```bash
 git clone https://github.com/PopularCoding/ventur
 
 cd ventur
  ```
- 
- ### Run the node
+
+#### Run the node
+
  The following command builds the node. (This may take some time):
- ```
+
+ ```bash
 cargo run --release -- --dev
 ```
 
-## Run Unit Tests
+### Run Unit Tests
+
 Unit tests can be run locally using the following command:
-``` 
+
+```bash
 cargo test
-``` 
+```
 
-## Manual Test Guide
+### Manual Test Guide
 
-### 1. Start the node
- ```
+#### 1. Start the node
+
+ ```bash
 cargo run --release -- --dev
 ```
 
@@ -63,7 +76,8 @@ cargo run --release -- --dev
 |:--:|
 |![Running the Node](docs/running-node.png)|
 
-### 2. Access the Node through the polkadot.js.org interface
+#### 2. Access the Node through the polkadot.js.org interface
+
 Once you have a ventur node running locally, follow this link:
 [https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer](https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
 
@@ -73,6 +87,7 @@ Once you have a ventur node running locally, follow this link:
 
 Confirm that you can see the recent blocks listed.
 If you are not able to access the block explorer on polkadot.js.org, you should:
+
 1. Confirm that your Ventur node is running
 2. Check if your Ventur node is running the JSON-RPC WS server on an address and port other than ```127.0.0.1:9944```
     a. If your node is running on a different address and port, update the custom endpoint in polkadot.js.org to the address and port number your node is serving
@@ -81,8 +96,10 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Setting your Custom Endpoint](docs/setting-custom-endpoint.png)|
 
-### 3. Test Out Functionality
-#### Initialize A One-Time Payment
+#### 3. Test Out Functionality
+
+##### Initialize A One-Time Payment
+
 1. Select `payments` in the dropdown under `submit the following extrinsic`
 2. Select the `initializePayment` extrinsic in the next dropdown
 3. Select the appropriate actor to be the payer id
@@ -91,13 +108,13 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Initializing a One-Time Payment in polkadot.js.org_ |
     |:--:|
     |![Initializing a One-Time Payment](docs/one-time-payment-init.png)|
-    
-    
+
     | _Transaction Succeeded_ |
     |:--:|
     |![Initialization Success](docs/init-success.png)|
-    
-#### Claim a Payment
+
+##### Claim a Payment
+
 1. Select `payments` in the dropdown under `submit the following extrinsic`
 2. Select the `claim` extrinsic in the next dropdown
 3. Make sure the acting account matches the `payee_id` field from your payment initialization
@@ -107,8 +124,9 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Claiming Payment With the Payments Pallet_ |
     |:--:|
     |![Claiming a Payment](docs/claim-payment.png)|
-    
-####Initialize Scheduled Payments
+
+##### Initialize Scheduled Payments
+
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
 2. In Scheduled Payments, click on `Add Item`
 3. Add as many payments as you'd like to test, choosing the scheduled unixtime for payment release
@@ -117,13 +135,13 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Scheduling Multiple Payments_ |
     |:--:|
     |![Multiple Payments](docs/multiple-payments.png)|
-    
-####Claiming Unavailable Payments
+
+##### Claiming Unavailable Payments
+
 1. Follow the same steps lined out in the Claim a Payment Section
 2. Try to claim as many payments as you'd like
 3. If you have scheduled a payment for a future time, the transaction should fail
 
-    
-    | _Claiming A Payment That Isn't Due Yet _ |
+    | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
