@@ -142,6 +142,7 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 ### Manual Test Guides
 
 [![Test Guide](https://img.shields.io/badge/Test_Guide-payment_pallet-informational)](/pallets/payments/README.md)
+
 [![Test Guide](https://img.shields.io/badge/Test_Guide-escrow_pallet-informational)](/pallets/escrow/README.md)
 
 ## Runtime Architecture
@@ -149,8 +150,12 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 Pallets:
 
 - Payment-Contracts
+
 [![rustdoc](https://img.shields.io/badge/rustdoc-payment_pallet-informational)](https://docs.ventur.network/pallet_payment/index.html)
+
 - Escrow
+
 [![rustdoc](https://img.shields.io/badge/rustdoc-escrow_pallet-informational)](https://docs.ventur.network/pallet_escrow/index.html)
+
 - NT-NFT (Targeted for Milestone 2)
 - RFP-Process (Targeted for Milestone 2)
