@@ -107,7 +107,7 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Claiming a Payment](docs/claim-payment.png)|
     
-####Initialize Scheduled Payments
+#### Initialize Scheduled Payments
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
 2. In Scheduled Payments, click on `Add Item`
 3. Add as many payments as you'd like to test, choosing the scheduled unixtime for payment release
@@ -117,12 +117,12 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Multiple Payments](docs/multiple-payments.png)|
     
-####Claiming Unavailable Payments
+#### Claiming Unavailable Payments
 1. Follow the same steps lined out in the Claim a Payment Section
 2. Try to claim as many payments as you'd like
 3. If you have scheduled a payment for a future time, the transaction should fail
 
     
-    | _Claiming A Payment That Isn't Due Yet _ |
+    | _Claiming An Unavailable Payment_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
