@@ -2,8 +2,7 @@ name: Cargo Build Release and Lint Validation
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on pushes
-  push:
+  pull_request:
     paths-ignore:
       - '.github/**'
       - '.vscode/**'
@@ -13,7 +12,7 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-    branches: 
+    branches:
       - main 
 
   # Allows you to run this workflow manually from the Actions tab
