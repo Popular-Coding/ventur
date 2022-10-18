@@ -1,6 +1,7 @@
 License: GPLv3
 
-# Escrow Pallet Testing Guide (Ubuntu)
+[Payment Pallet Rust Docs](https://docs.ventur.network/pallet_payments/index.html)
+# Payment Pallet Testing Guide (Ubuntu)
 
 ## Prerequisite Setup
 ### Install Dependencies 
@@ -64,7 +65,7 @@ cargo run --release -- --dev
 
 ### 2. Access the Node through the polkadot.js.org interface
 Once you have a ventur node running locally, follow this link:
-https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer
+[https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer](https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
 
 | _Accessing your Development Node Endpoint in polkadot.js.org_ |
 |:--:|
