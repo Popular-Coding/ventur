@@ -1,4 +1,5 @@
 License: GPLv3
+
 [Payment Pallet Rust Docs](https://docs.ventur.network/pallet_payments/index.html)
 # Payment Pallet Testing Guide (Ubuntu)
 

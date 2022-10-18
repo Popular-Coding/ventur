@@ -1,4 +1,5 @@
 License: GPLv3
+
 [Escrow Pallet Rust Docs](https://docs.ventur.network/pallet_escrow/index.html)
 # Escrow Pallet Testing Guide (Ubuntu)
 
