@@ -51,6 +51,7 @@ jobs:
       - name: Cargo Build
         run: |
           cargo build --release
+
   check-release-macos:
     runs-on: macos-latest
       steps:
