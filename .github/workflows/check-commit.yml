@@ -1,4 +1,4 @@
-name: Cargo Check Release and Lint Validation
+name: Cargo Check Commits
 
 # Controls when the action will run.
 on:
@@ -13,7 +13,7 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-    branches: 
+    branches-ignore: 
       - main 
 
   # Allows you to run this workflow manually from the Actions tab
@@ -21,7 +21,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check-release:
+  check-commit:
     strategy:
       matrix: 
         os: [ubuntu-20.04, macos-latest]
@@ -50,11 +50,6 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup target add wasm32-unknown-unknown --toolchain nightly 
 
-      - name: Cargo Clippy 
+      - name: Cargo Check
         run: |
-          cargo clippy
-          cargo clean
-
-      - name: Cargo Build
-        run: |
-          cargo build --release
+          SKIP_WASM_BUILD=1 cargo check --release
