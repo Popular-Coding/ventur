@@ -1,4 +1,4 @@
-name: Cargo Check Release and Lint Validation
+name: Cargo Build Release and Lint Validation
 
 # Controls when the action will run.
 on:
@@ -9,25 +9,36 @@ on:
       - '.vscode/**'
       - 'docs/**'
       - '.gitignore'
-      - '**/README.md'
-      - '**/tests.re'
+      - '**.md'
+      - '**.png'
+      - '**/tests.rs'
       - '**/mock.rs'
+    branches: 
+      - main 
+  pull_request:
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '.gitignore'
+      - '**.md'
+      - '**.png'
+      - '**/tests.rs'
+      - '**/mock.rs'
+    branches:
+      - main 
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check:
-    # The type of runner that the job will run on
+  check-release-ubuntu:
     runs-on: ubuntu-20.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Set-up
+      - name: Set-up substrate requirements
         run: |
           sudo apt install -y build-essential
           sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
@@ -44,10 +55,42 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup target add wasm32-unknown-unknown --toolchain nightly 
 
-      - name: Cargo Check
+      - name: Cargo Clippy 
         run: |
-          SKIP_WASM_BUILD=1 cargo check --release
+          cargo clippy
+          cargo clean
+
+      - name: Cargo Build
+        run: |
+          cargo build --release
+
+  check-release-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set-up substrate requirements
+        run: |
+          brew update 
+          brew install openssl
+
+      - name: Install and configure Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update stable 
+          rustup update nightly 
+          rustup install nightly-2022-09-19 
+          rustup override set nightly-2022-09-19
+          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32-unknown-unknown --toolchain nightly 
 
       - name: Cargo Clippy 
         run: |
           cargo clippy
+          cargo clean
+
+      - name: Cargo Build
+        run: |
+          cargo build --release

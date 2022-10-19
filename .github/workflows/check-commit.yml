@@ -1,10 +1,9 @@
-name: Unit Tests
+name: Cargo Check Commit
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on pull request events but only for the master branch
-  pull_request:
-    branches: [ main ]
+  # Triggers the workflow on pushes
+  push:
     paths-ignore:
       - '.github/**'
       - '.vscode/**'
@@ -14,29 +13,25 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-  push:
-    branches: [ main ]
+    branches-ignore:
+      - main 
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  test:
-    # The type of runner that the job will run on
+  check-commit-ubuntu:
     runs-on: ubuntu-20.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Set-Up
+      - name: Set-up substrate requirements
         run: |
           sudo apt install -y build-essential
           sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
 
-      - name: Install Rustup
+      - name: Install and configure Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source ~/.cargo/env
@@ -48,6 +43,32 @@ jobs:
           rustup target add wasm32-unknown-unknown
           rustup target add wasm32-unknown-unknown --toolchain nightly 
 
-      - name: Check Unit Tests
+      - name: Cargo Check
         run: |
-          SKIP_WASM_BUILD=1 cargo test
+          SKIP_WASM_BUILD=1 cargo check --release
+
+  check-commit-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set-up substrate requirements
+        run: |
+          brew update 
+          brew install openssl
+
+      - name: Install and configure Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update stable 
+          rustup update nightly 
+          rustup install nightly-2022-09-19 
+          rustup override set nightly-2022-09-19
+          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32-unknown-unknown --toolchain nightly 
+
+      - name: Cargo Check
+        run: |
+          SKIP_WASM_BUILD=1 cargo check --release
