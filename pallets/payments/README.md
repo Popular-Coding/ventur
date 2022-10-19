@@ -1,6 +1,7 @@
 License: GPLv3
 
-# Escrow Pallet Testing Guide (Ubuntu)
+[Payment Pallet Rust Docs](https://docs.ventur.network/pallet_payments/index.html)
+# Payment Pallet Testing Guide (Ubuntu)
 
 ## Prerequisite Setup
 ### Install Dependencies 
@@ -64,7 +65,7 @@ cargo run --release -- --dev
 
 ### 2. Access the Node through the polkadot.js.org interface
 Once you have a ventur node running locally, follow this link:
-https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer
+[https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer](https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
 
 | _Accessing your Development Node Endpoint in polkadot.js.org_ |
 |:--:|
@@ -105,9 +106,9 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 
     | _Claiming Payment With the Payments Pallet_ |
     |:--:|
-    |![Claiming a Payment](docs/claim-payment.png)|
+    |![Claiming a Payment](docs/payment-success.png)|
     
-####Initialize Scheduled Payments
+#### Initialize Scheduled Payments
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
 2. In Scheduled Payments, click on `Add Item`
 3. Add as many payments as you'd like to test, choosing the scheduled unixtime for payment release
@@ -117,12 +118,12 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Multiple Payments](docs/multiple-payments.png)|
     
-####Claiming Unavailable Payments
+#### Claiming Unavailable Payments
 1. Follow the same steps lined out in the Claim a Payment Section
 2. Try to claim as many payments as you'd like
 3. If you have scheduled a payment for a future time, the transaction should fail
 
     
-    | _Claiming A Payment That Isn't Due Yet _ |
+    | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
