@@ -75,6 +75,15 @@ pub mod pallet {
 		pub(super) is_frozen: bool,
 	}
 
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
+	pub struct ItemDetails<AccountId> {
+		// maybe differentiate minter from owner
+		// On assignment but not yet accepted, who is the owner?
+		pub(super) owner: AccountId,
+		pub(super) is_assigned: bool,
+		pub(super) is_accepted: bool,
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
@@ -89,6 +98,22 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn collection)]
 	pub(super) type Collection<T: Config> = StorageMap<_, Blake2_128Concat, T::CollectionId, CollectionDetails<T::AccountId>, OptionQuery>;
+	
+	#[pallet::storage]
+	#[pallet::getter(fn assignment)]
+	pub(super) type Assignment<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::AccountId, T::ItemId, OptionQuery>;
+	
+	#[pallet::storage]
+	#[pallet::getter(fn proposed_assignment)]
+	pub(super) type ProposedAssignment<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::AccountId, T::ItemId, OptionQuery>;
+	
+	#[pallet::storage]
+	#[pallet::getter(fn canceled_assignment)]
+	pub(super) type CanceledAssignment<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::AccountId, T::ItemId, OptionQuery>;
+	
+	#[pallet::storage]
+	#[pallet::getter(fn item)]
+	pub(super) type Item<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::ItemId, ItemDetails<T::AccountId>, OptionQuery>;
 	
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -132,6 +157,12 @@ pub mod pallet {
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
 		StorageOverflow,
+		/// CollectionId already exists
+		CollectionIdAlreadyExists,
+		/// CollectionId does not exist
+		CollectionIdDoesNotExist,
+		/// Caller is not authorized to perform this action
+		Unauthorized,
 	}
 
 	#[pallet::call]
@@ -140,7 +171,7 @@ pub mod pallet {
         #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn create_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			ensure!(!<Collection<T>>::contains_key(&collection_id), <Error<T>>::NoneValue);
+			ensure!(!<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdAlreadyExists);
 			<Collection<T>>::insert(
 				collection_id, 
 				CollectionDetails {
@@ -150,6 +181,35 @@ pub mod pallet {
 				});
 
 			Self::deposit_event(Event::CreateCollection(collection_id, who));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn freeze_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
+			// Ensure that the transaction is signed
+			let who = ensure_signed(origin)?;
+
+			// Ensure the Collection to be frozen exists
+			ensure!(<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdDoesNotExist);
+			
+			// Get Collection Details
+			let details = <Collection<T>>::get(&collection_id);
+
+			// Ensure that the caller is the owner
+			ensure!(&who == &details.unwrap().owner, <Error<T>>::Unauthorized);
+
+			// Freeze the account
+			<Collection<T>>::try_mutate(
+				&collection_id, 
+				| maybe_collection_details | -> DispatchResult {
+					let collection_details =
+						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+					
+					collection_details.is_frozen = true;
+					Ok(())
+				}
+			)?;
+			Self::deposit_event(Event::FreezeCollection(collection_id, who));
 			Ok(())
 		}
 	}
