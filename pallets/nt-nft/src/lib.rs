@@ -186,17 +186,16 @@ pub mod pallet {
 
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn freeze_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
-			// Ensure that the transaction is signed
+			// Ensure transaction signed, collection exists, and caller is authorized
 			let who = ensure_signed(origin)?;
-
 			// Ensure the Collection to be frozen exists
 			ensure!(<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdDoesNotExist);
-			
+
 			// Get Collection Details
 			let details = <Collection<T>>::get(&collection_id);
 
 			// Ensure that the caller is the owner
-			ensure!(&who == &details.unwrap().owner, <Error<T>>::Unauthorized);
+			ensure!(who == details.unwrap().owner, <Error<T>>::Unauthorized);
 
 			// Freeze the account
 			<Collection<T>>::try_mutate(
@@ -210,6 +209,34 @@ pub mod pallet {
 				}
 			)?;
 			Self::deposit_event(Event::FreezeCollection(collection_id, who));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn thaw_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
+			// Ensure transaction signed, collection exists, and caller is authorized
+			let who = ensure_signed(origin)?;
+
+			// Ensure the Collection to be frozen exists
+			ensure!(<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdDoesNotExist);
+		
+			// Get Collection Details
+			let details = <Collection<T>>::get(&collection_id);
+
+			// Ensure that the caller is the owner
+			ensure!(who == details.unwrap().owner, <Error<T>>::Unauthorized);
+
+			<Collection<T>>::try_mutate(
+				&collection_id, 
+				| maybe_collection_details | -> DispatchResult {
+					let collection_details =
+						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+					
+					collection_details.is_frozen = false;
+					Ok(())
+				}
+			)?;
+			Self::deposit_event(Event::ThawCollection(collection_id, who));
 			Ok(())
 		}
 	}
