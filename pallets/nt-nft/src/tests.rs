@@ -143,3 +143,31 @@ fn burn_ntnft_fails_on_unauthorized() {
 		assert_noop!(NTNFTModule::burn_ntnft(Origin::signed(OTHER_ACCOUNT_ID), COLLECTION_ID, NTNFT_ID), Error::<Test>::Unauthorized);
 	});
 }
+
+// Test Assign NTNFT
+#[test]
+fn assign_ntnft_successfully_executes() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(NTNFTModule::create_collection(Origin::signed(ACCOUNT_ID), COLLECTION_ID));
+		assert_ok!(NTNFTModule::mint_ntnft(Origin::signed(ACCOUNT_ID), COLLECTION_ID, NTNFT_ID));
+		assert_ok!(NTNFTModule::assign_ntnft(Origin::signed(ACCOUNT_ID), COLLECTION_ID, NTNFT_ID, OTHER_ACCOUNT_ID));
+	});
+}
+
+#[test]
+fn assign_ntnft_fails_on_collectionid_does_not_exist() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(NTNFTModule::create_collection(Origin::signed(ACCOUNT_ID), COLLECTION_ID));
+		assert_ok!(NTNFTModule::mint_ntnft(Origin::signed(ACCOUNT_ID), COLLECTION_ID, NTNFT_ID));
+		assert_noop!(NTNFTModule::assign_ntnft(Origin::signed(ACCOUNT_ID), OTHER_COLLECTION_ID, NTNFT_ID, OTHER_ACCOUNT_ID), Error::<Test>::CollectionIdDoesNotExist);
+	});
+}
+
+#[test]
+fn assign_ntnft_fails_on_unauthorized() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(NTNFTModule::create_collection(Origin::signed(ACCOUNT_ID), COLLECTION_ID));
+		assert_ok!(NTNFTModule::mint_ntnft(Origin::signed(ACCOUNT_ID), COLLECTION_ID, NTNFT_ID));
+		assert_noop!(NTNFTModule::assign_ntnft(Origin::signed(OTHER_ACCOUNT_ID), COLLECTION_ID, NTNFT_ID, OTHER_ACCOUNT_ID), Error::<Test>::Unauthorized);
+	});
+}

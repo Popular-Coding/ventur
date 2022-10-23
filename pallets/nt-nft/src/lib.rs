@@ -293,7 +293,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// TODO burn_ntnft
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
 		pub fn burn_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
@@ -342,7 +341,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Check that collection exists
-			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::NoneValue)?;
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
 			
 			// Check that collection is not frozen
 			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
