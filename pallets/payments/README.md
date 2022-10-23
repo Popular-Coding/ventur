@@ -106,7 +106,7 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 
     | _Claiming Payment With the Payments Pallet_ |
     |:--:|
-    |![Claiming a Payment](docs/claim-payment.png)|
+    |![Claiming a Payment](docs/payment-success.png)|
     
 #### Initialize Scheduled Payments
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
@@ -124,6 +124,6 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 3. If you have scheduled a payment for a future time, the transaction should fail
 
     
-    | _Claiming An Unavailable Payment_ |
+    | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
