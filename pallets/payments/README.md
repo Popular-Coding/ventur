@@ -43,7 +43,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
  The following command pulls the ventur-node code from our github repo:
 
 ```bash
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur
 
 cd ventur
  ```
@@ -123,10 +123,9 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 
     | _Claiming Payment With the Payments Pallet_ |
     |:--:|
-    |![Claiming a Payment](docs/claim-payment.png)|
-
-##### Initialize Scheduled Payments
-
+    |![Claiming a Payment](docs/payment-success.png)|
+    
+#### Initialize Scheduled Payments
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
 2. In Scheduled Payments, click on `Add Item`
 3. Add as many payments as you'd like to test, choosing the scheduled unixtime for payment release
@@ -135,13 +134,13 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Scheduling Multiple Payments_ |
     |:--:|
     |![Multiple Payments](docs/multiple-payments.png)|
-
-##### Claiming Unavailable Payments
-
+    
+#### Claiming Unavailable Payments
 1. Follow the same steps lined out in the Claim a Payment Section
 2. Try to claim as many payments as you'd like
 3. If you have scheduled a payment for a future time, the transaction should fail
 
+    
     | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
