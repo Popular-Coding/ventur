@@ -40,19 +40,19 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 
 #### Fetch the code
 
- The following command pulls the ventur-node code from our github repo:
+The following command pulls the ventur-node code from our github repo:
 
 ```bash
-git clone https://github.com/Popular-Coding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
- ```
+```
 
 #### Run the node
 
- The following command builds the node. (This may take some time):
+The following command builds the node. (This may take some time):
 
- ```bash
+```bash
 cargo run --release -- --dev
 ```
 
@@ -68,7 +68,7 @@ cargo test
 
 #### 1. Start the node
 
- ```bash
+```bash
 cargo run --release -- --dev
 ```
 
@@ -124,8 +124,9 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Claiming Payment With the Payments Pallet_ |
     |:--:|
     |![Claiming a Payment](docs/payment-success.png)|
-    
+
 #### Initialize Scheduled Payments
+
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
 2. In Scheduled Payments, click on `Add Item`
 3. Add as many payments as you'd like to test, choosing the scheduled unixtime for payment release
@@ -134,13 +135,13 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Scheduling Multiple Payments_ |
     |:--:|
     |![Multiple Payments](docs/multiple-payments.png)|
-    
+
 #### Claiming Unavailable Payments
+
 1. Follow the same steps lined out in the Claim a Payment Section
 2. Try to claim as many payments as you'd like
 3. If you have scheduled a payment for a future time, the transaction should fail
 
-    
     | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|

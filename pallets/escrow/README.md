@@ -43,7 +43,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 The following command pulls the ventur-node code from our github repo:
 
 ```bash
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
 ```

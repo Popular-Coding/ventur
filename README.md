@@ -97,7 +97,7 @@ First, install [Docker](https://docs.docker.com/get-docker/) and
 Clone the repo.
 
 ```bash
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
 ```
@@ -113,9 +113,10 @@ Then run the following command to start a single node development chain.
 Clone the repo.
 
 ```bash
-git clone https://github.com/PopularCoding/ventur
+git clone <https://github.com/Popular-Coding/ventur.git>
 
 cd ventur
+
 ```
 
 Then run this command to build the docker image.
