@@ -78,7 +78,7 @@ pub mod pallet {
 			WithdrawReasons, 
 			ExistenceRequirement::AllowDeath
 		}, 
-		sp_runtime::{traits::Zero/* , SaturatedConversion */}
+		sp_runtime::{traits::{Zero, CheckedSub}}
 	};
 	use frame_system::pallet_prelude::*;
 
@@ -270,6 +270,12 @@ pub mod pallet {
 			}
 
 			// Confirm contribution is smaller than escrow amount
+			T::PaymentCurrency::ensure_can_withdraw(
+				&funder,
+				amount,
+				WithdrawReasons::all(),
+				T::PaymentCurrency::free_balance(&funder).checked_sub(&amount).unwrap()
+			)?;
 			ensure!(
 				T::PaymentCurrency::free_balance(&funder) >= amount,
 				Error::<T>::InsufficientBalance
@@ -416,16 +422,17 @@ pub mod pallet {
 			
 			// Distribute remaining funds to contributors proportionately to their contributions
 			escrow_details.contributions.iter().for_each(|contribution|{
-					let contributed_amount: u128 = TryInto::<u128>::try_into(contribution.amount).ok().unwrap();
-					// Calculate their disbursement
-					let close_disbursement: u128 = escrow_total_at_closing * (contributed_amount/escrow_total_contributed);
-					// Transfer the funds to the contributor
-					T::PaymentCurrency::transfer(
+				let contributed_amount: u128 = TryInto::<u128>::try_into(contribution.amount).ok().unwrap();
+				// Calculate their disbursement
+				let close_disbursement: u128 = 
+					(escrow_total_at_closing as f64 * (contributed_amount as f64/escrow_total_contributed as f64)) as u128;
+				// Transfer the funds to the contributor
+				T::PaymentCurrency::transfer(
 					&escrow_id.clone(),
 					&contribution.contributor,
-				    close_disbursement.try_into().ok().unwrap(),
+					close_disbursement.try_into().ok().unwrap(),
 					AllowDeath,
-					).ok();
+				).ok();
 			});
 
 			// Remove Escrow and Administrator from Storage
