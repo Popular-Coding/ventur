@@ -7,7 +7,7 @@ homepage = "https://www.popularcoding.com/"
 edition = "2021"
 license = "GPLv3"
 publish = false
-repository = "https://github.com/Popular-Coding/escrow"
+repository = "https://github.com/Popular-Coding/ventur"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
