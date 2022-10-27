@@ -49,7 +49,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
  The following command pulls the ventur-node code from our GitHub repo. 
 
 ```
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
  ```
@@ -94,7 +94,7 @@ First, install [Docker](https://docs.docker.com/get-docker/) and
 
 Clone the repo.
 ```
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
 ```
@@ -109,7 +109,7 @@ Then run the following command to start a single node development chain.
 ### Running a Ventur Node (Dockerfile)
 Clone the repo.
 ```
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
 ```
