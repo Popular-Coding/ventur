@@ -369,7 +369,7 @@ pub mod pallet {
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					escrow_details.amount -= amount;
 					
@@ -478,7 +478,7 @@ pub mod pallet {
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					escrow_details.is_open = true;
 					Ok(())
@@ -516,7 +516,7 @@ pub mod pallet {
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					escrow_details.is_open = false;
 					Ok(())
@@ -554,7 +554,7 @@ pub mod pallet {
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					escrow_details.is_frozen = true;
 					Ok(())
@@ -592,7 +592,7 @@ pub mod pallet {
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					escrow_details.is_frozen = false;
 					Ok(())
@@ -636,7 +636,7 @@ pub mod pallet {
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					// Add admin to vector
 					escrow_details.admins.try_push(new_admin.clone()).ok();
@@ -686,8 +686,7 @@ pub mod pallet {
 			<Escrow<T>>::try_mutate(
 				&escrow_id, 
 				| maybe_escrow_details | -> DispatchResult {
-					let escrow_details =
-						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+					let escrow_details = maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
 					
 					// Remove admin from vector
 					escrow_details.admins.remove(
