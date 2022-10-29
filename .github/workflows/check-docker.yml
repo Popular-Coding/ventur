@@ -39,7 +39,7 @@ jobs:
       - name: Docker compose 
         run: | 
           docker-compose down --remove-orphans 
-          timeout 3600 docker-compose run --rm --service-ports dev $@ || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 ]]; then exit $exitcode; else exit 0; fi
+          timeout 1h docker-compose run --rm --service-ports dev $@ || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 ]]; then exit $exitcode; else exit 0; fi
 
   check-docker-build-run:
     runs-on: ubuntu-20.04
@@ -60,4 +60,4 @@ jobs:
       - name: Docker build and run 
         run: | 
           docker build . -t ventur-node
-          timeout 300 docker run -p 9944:9944 ventur-node || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 ]]; then exit $exitcode; else exit 0; fi
+          timeout -k 5m docker run -p 9944:9944 ventur-node || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 && $exitcode -ne 137 ]]; then exit $exitcode; else exit 0; fi
