@@ -20,7 +20,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check-commit-ubuntu:
+  check-docker-compose:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -36,8 +36,7 @@ jobs:
            sudo apt-get update
            sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
           
-      - name: docker compose 
+      - name: Docker compose 
         run: | 
-          cd .github/scripts/
           docker-compose down --remove-orphans 
-          timeout 60 docker-compose run --rm --service-ports dev $@
+          timeout 3600 docker-compose run --rm --service-ports dev $@ || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 ]]; then exit $exitcode; else exit 0; fi
