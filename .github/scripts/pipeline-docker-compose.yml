@@ -11,4 +11,4 @@ services:
       - CARGO_HOME=/var/www/ventur-node/.cargo
     volumes:
       - .:/var/www/ventur-node
-    command: bash -c "cargo build --release"
+    command: bash -c "cargo build --release && ./target/release/ventur-node --dev --ws-external"

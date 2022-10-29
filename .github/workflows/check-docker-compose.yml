@@ -40,4 +40,4 @@ jobs:
         run: | 
           cd .github/scripts/
           docker-compose down --remove-orphans 
-          docker-compose run --rm --service-ports dev $@
+          timeout 60 docker-compose run --rm --service-ports dev $@
