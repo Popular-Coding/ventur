@@ -60,4 +60,4 @@ jobs:
       - name: Docker build and run 
         run: | 
           docker build . -t ventur-node
-          timeout -k 5m docker run -p 9944:9944 ventur-node || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 && $exitcode -ne 137 ]]; then exit $exitcode; else exit 0; fi
+          timeout --kill-after=5m 5m docker run -p 9944:9944 ventur-node || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 && $exitcode -ne 137 ]]; then exit $exitcode; else exit 0; fi
