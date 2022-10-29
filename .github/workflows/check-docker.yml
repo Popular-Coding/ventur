@@ -5,6 +5,7 @@ on:
   # Triggers the workflow on pushes
   push:
     paths-ignore:
+      - '.github/**'
       - '.vscode/**'
       - 'docs/**'
       - '.gitignore'
@@ -12,7 +13,19 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-    branches-ignore:
+    branches: 
+      - main 
+  pull_request:
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '.gitignore'
+      - '**.md'
+      - '**.png'
+      - '**/tests.rs'
+      - '**/mock.rs'
+    branches:
       - main 
 
   # Allows you to run this workflow manually from the Actions tab
