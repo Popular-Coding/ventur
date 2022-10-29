@@ -34,7 +34,7 @@ RUN set -eux && \
 	rustup target add wasm32-unknown-unknown --toolchain nightly && \
 	# install cargo tools
 	cargo install cargo-web wasm-pack cargo-deny cargo-nextest && \
-    cargo install --locked cargo-spellcheck && \
+  cargo install --locked cargo-spellcheck && \
 	cargo install --version 0.4.2 diener && \
 	# wasm-bindgen-cli version should match the one pinned in substrate
 	cargo install --version 0.2.73 wasm-bindgen-cli && \
