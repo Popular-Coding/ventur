@@ -19,7 +19,7 @@ const PAYEE_ID: u64 = 1234;
 const PAYMENT_ID: u32 = 0001;
 const RFP_REFERENCE_ID: u32 = 966;
 const TOTAL_PAYMENT_AMOUNT: u128 = 24601;
-const ESCROW_ACCOUNT_ID: u64 = 1999;
+// const ESCROW_ACCOUNT_ID: u64 = 1999;
 const ADMINISTRATOR_ID: u64 = 1410;
 const PAYER_ID: u64 = 124;
 
@@ -49,8 +49,8 @@ fn test_initialize_payment() {
             scheduled_payment_2
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
         };
         let payment_details = pallet_payments::PaymentDetails::<Test> {
             payer: PAYER_ID,
@@ -73,7 +73,7 @@ fn test_initialize_payment() {
         );
         let expected_event = 
             crate::Event::PaymentInitialized(
-                ESCROW_ACCOUNT_ID, 
+                PAYER_ID, 
                 PAYEE_ID, 
                 TOTAL_PAYMENT_AMOUNT
             );
@@ -87,13 +87,13 @@ fn test_claim_successful_payment() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &PAYER_ID, 
             TOTAL_PAYMENT_AMOUNT
         );
 
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
-                &ESCROW_ACCOUNT_ID
+                &PAYER_ID
             ), 
             TOTAL_PAYMENT_AMOUNT
         );
@@ -113,8 +113,8 @@ fn test_claim_successful_payment() {
             scheduled_payment_2.clone()
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
         };
         let payment_details = pallet_payments::PaymentDetails::<Test> {
             payer: PAYER_ID,
@@ -154,7 +154,7 @@ fn test_claim_successful_payment() {
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
-                &ESCROW_ACCOUNT_ID
+                &PAYER_ID
             ), 
             TOTAL_PAYMENT_AMOUNT - (TOTAL_PAYMENT_AMOUNT / 2),
         );
@@ -174,7 +174,7 @@ fn test_claim_fails_before_payment_date() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &PAYER_ID, 
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -187,8 +187,8 @@ fn test_claim_fails_before_payment_date() {
             scheduled_payment.clone(), 
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
         };
         let payment_details = pallet_payments::PaymentDetails::<Test> {
             payer: PAYER_ID,
@@ -223,7 +223,7 @@ fn test_claim_fails_before_payment_date() {
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
-                &ESCROW_ACCOUNT_ID
+                &PAYER_ID
             ), 
             TOTAL_PAYMENT_AMOUNT,
         );
@@ -242,7 +242,7 @@ fn test_block_and_unblock_payment() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &PAYER_ID, 
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -255,8 +255,8 @@ fn test_block_and_unblock_payment() {
             scheduled_payment.clone(), 
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
         };
         let payment_details = pallet_payments::PaymentDetails::<Test> {
             payer: PAYER_ID,

@@ -75,7 +75,12 @@ pub mod pallet {
 	use frame_support::{
 		pallet_prelude::RuntimeDebugNoBound,
 		pallet_prelude::*,
-		traits::{Currency, ExistenceRequirement::AllowDeath, UnixTime},
+		traits::{
+			Currency, 
+			ExistenceRequirement::AllowDeath, 
+			UnixTime,
+			LockableCurrency,
+		},
 		storage::bounded_vec::BoundedVec,
 	};
 	use frame_system::pallet_prelude::*;
@@ -169,7 +174,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type PaymentId: Member + Parameter + From<u32> + Clone + Eq + Copy;
 		type RFPReferenceId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
-		type PaymentCurrency: Currency<Self::AccountId> + Clone + Eq;
+		type PaymentCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber> + Clone + Eq;
 		type TimeProvider: UnixTime;
 	}
 
@@ -269,12 +274,13 @@ pub mod pallet {
 					let payment_method = &payment_details.payment_method;
 					let payment_account_id = &payment_method.account_id;
 					ensure!(next_payment.released, <Error<T>>::PaymentNotReleased);
-					T::PaymentCurrency::transfer(
-						payment_account_id,
-						&payee,
-						payment_amount,
-						AllowDeath,
-					)?;
+					if payment_method.payment_source == PaymentSource::PersonalAccount {
+						Pallet::<T>::transfer_funds_from_personal_account(
+							payment_account_id,
+							&payee, 
+							payment_amount
+						)?;
+					}
 					
 					// If successfully claimed, get rid of the first payment
 					payment_schedule.remove(0);
@@ -391,6 +397,19 @@ pub mod pallet {
 				}
 			)?;
 			Ok(())
+		}
+
+		pub fn transfer_funds_from_personal_account(
+			payment_account_id: &T::AccountId, 
+			payee: &T::AccountId,
+			payment_amount: BalanceOf<T>,
+		) -> DispatchResult {
+			T::PaymentCurrency::transfer(
+				payment_account_id,
+				&payee,
+				payment_amount,
+				AllowDeath,
+			)
 		}
 	}
 }
