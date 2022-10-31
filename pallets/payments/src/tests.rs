@@ -52,15 +52,19 @@ fn test_initialize_payment() {
             payment_source: pallet_payments::PaymentSource::EscrowAccount,
             account_id: ESCROW_ACCOUNT_ID,
         };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
+        };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert!(
             Payments::payment_agreements(
@@ -112,15 +116,19 @@ fn test_claim_successful_payment() {
             payment_source: pallet_payments::PaymentSource::EscrowAccount,
             account_id: ESCROW_ACCOUNT_ID,
         };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
+        };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert_ok!(
             Payments::claim(
@@ -182,15 +190,19 @@ fn test_claim_fails_before_payment_date() {
             payment_source: pallet_payments::PaymentSource::EscrowAccount,
             account_id: ESCROW_ACCOUNT_ID,
         };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
+        };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert_noop!(
             Payments::claim(
@@ -246,15 +258,19 @@ fn test_block_and_unblock_payment() {
             payment_source: pallet_payments::PaymentSource::EscrowAccount,
             account_id: ESCROW_ACCOUNT_ID,
         };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
+        };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert_ok!(
             Payments::block_next_payment(
