@@ -35,6 +35,28 @@
 //! While the Crowdloan Rewards Pallet supports claiming rewards,
 //! this Payments Pallet supports the instantiation of scheduled payments
 //! as well as lump sum, one-time payments
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! The Payments pallet provides functions for:
+//!
+//! - Setting up payments
+//! - Claiming payments
+//! - Blocking/Releasing payments from being claimed
+//!
+//! ## Interface
+//!
+//! ### Dispatchable Functions
+//!
+//! - `initialize_payment` - Creates the payment details and commits them to storage
+//! - `claim` - Transfers the next available funds to the payee's account
+//! - `block_next_payment` - Prevent the claiming of the next and all subsequent payments
+//! - `release_next_payment` - Free up the next available and all subsequent payments for claiming
+
 
 #![cfg_attr(not(feature = "std"), no_std)]
 pub use pallet::*;
