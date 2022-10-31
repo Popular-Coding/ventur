@@ -1,3 +1,22 @@
+// This file is part of Ventur, it implements the instantiation
+// and claiming of scheduled or one-time payments
+
+// Copyright (C) 2022 Popular Coding LLC.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 //! # Payments Pallet
 // 
 //! The Payments pallet supports the instantiation of lump sum
@@ -39,80 +58,82 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 
+	pub const VEC_LIMIT: u32 = u32::MAX;
+
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
-	// The struct that stores info about the payment agreement
-	// between two parties
+	/// The struct that stores info about the payment agreement
+	/// between two parties
 	pub struct PaymentDetails<T: Config>{
 
-		// The paying party of the payment contract
-		// Note: If, for example, the payment is coming from
-		// an escrow account, this won't be the account from
-		// which the payment is coming
+		/// The paying party of the payment contract
+		/// Note: If, for example, the payment is coming from
+		/// an escrow account, this won't be the account from
+		/// which the payment is coming
 		pub(super) payer: T::AccountId,
 
-		// Which account the funds will be transferred to
+		/// Which account the funds will be transferred to
 		pub(super) payee: T::AccountId,
 
-		// The UID for payments, used for identifying this 
-		// payment agreement
+		/// The UID for payments, used for identifying this 
+		/// payment agreement
 		pub(super) payment_id: T::PaymentId,
 
-		// The id of the RFP associated with this payment
-		// agreement
+		/// The id of the RFP associated with this payment
+		/// agreement
 		pub(super) rfp_reference_id: T::RFPReferenceId,
 
-		// The total payment amount that will be paid
-		// out to the payee
+		/// The total payment amount that will be paid
+		/// out to the payee
 		pub(super) total_payment_amount: BalanceOf<T>,
 
-		// This bounded vec allows payments to be paid 
-		// out in installments
+		/// This bounded vec allows payments to be paid 
+		/// out in installments
 		pub(super) payment_schedule: 
 			BoundedVec<
-				ScheduledPayment<T>, T::MaxPaymentsScheduled
+				ScheduledPayment<T>, ConstU32<{VEC_LIMIT}>
 			>,
 
-		// A struct describing where the payment will 
-		// be coming from 
+		/// A struct describing where the payment will 
+		/// be coming from 
 		pub(super) payment_method: PaymentMethod<T>,
 
-		// The id of the admin of this payment agreement
-		// Admins will have special privileges w.r.t.
-		// modifying payments
+		/// The id of the admin of this payment agreement
+		/// Admins will have special privileges w.r.t.
+		/// modifying payments
 		pub(super) administrator_id: T::AccountId,
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
-	// An instance of a payment that is to be issued and claimed
+	/// An instance of a payment that is to be issued and claimed
 	pub struct ScheduledPayment<T: Config> {
-		// When the payment will be eligible for claiming
+		/// When the payment will be eligible for claiming
 		pub(super) payment_date: u64,
 
-		// How much of the total amount can be claimed with
-		// this instance of payment
+		/// How much of the total amount can be claimed with
+		/// this instance of payment
 		pub(super) amount_per_claim: BalanceOf<T>,
 
-		// If false, this instance is not eligible for claim
+		/// If false, this instance is not eligible for claim
 		pub(super) released: bool,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo)]
-	// Whether the payment is coming from a personal or an
-	// escrow account
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo, Copy)]
+	/// Whether the payment is coming from a personal or an
+	/// escrow account
 	pub enum PaymentSource {
 		#[default]
 		PersonalAccount,
 		EscrowAccount,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, Copy)]
 	#[scale_info(skip_type_params(T))]
 	pub struct PaymentMethod<T: Config> {
 		pub(super) payment_source: PaymentSource,
 
-		// The account from which the transfer is to be drawn
+		/// The account from which the transfer is to be drawn
 		pub(super) account_id: T::AccountId,
 	}
 
@@ -124,11 +145,9 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type PaymentId: Member + Parameter + From<u32> + Clone + Eq;
+		type PaymentId: Member + Parameter + From<u32> + Clone + Eq + Copy;
 		type RFPReferenceId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type PaymentCurrency: Currency<Self::AccountId> + Clone + Eq;
-		#[pallet::constant]
-		type MaxPaymentsScheduled: Get<u32>;
 		type TimeProvider: UnixTime;
 	}
 
@@ -139,9 +158,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn payment_agreements)]
-	// Here we store all payment agreements
-	// Key: (payer, payee, payment_id)
-	// Value: Payment Details
+	/// Here we store all payment agreements
+	/// Key: (payer, payee, payment_id)
+	/// Value: Payment Details
 	pub type PaymentAgreements<T: Config> = StorageNMap<
 		_,
 		(
@@ -156,36 +175,44 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// Payment has successfully been initialized
+		/// [payer, payee, total_payment_amount]
 		PaymentInitialized(T::AccountId, T::AccountId, BalanceOf<T>),
+
+		/// The next available payment has been claimed
+		/// [payee, amount_claimed]
 		PartOfPaymentClaimed(T::AccountId, BalanceOf<T>),
+
+		/// The next available payment has been released or frozen
+		/// [payer, payment_id, payment_made_avialble_for_claim]
 		NextPaymentReleaseStatusChanged(T::AccountId, T::PaymentId, bool),
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		// Payment doesn't exist in storage with the specified key
+		/// Payment doesn't exist in storage with the specified key
 		PaymentDetailsNonExistent,
 
-		// There is no scheduled payment in the payment agreements
+		/// There is no scheduled payment in the payment agreements
 		NoScheduledPaymentRecorded,
 
-		// The payment has not been released, or has been blocked by
-		// the payer
+		/// The payment has not been released, or has been blocked by
+		/// the payer
 		PaymentNotReleased,
 
-		// A payment agreement with the specified key already exists
+		/// A payment agreement with the specified key already exists
 		PaymentAlreadyInitialized,
 
-		// The scheduled date for payment has not passed yet, 
-		// meaning the payment cannot be claimed
+		/// The scheduled date for payment has not passed yet, 
+		/// meaning the payment cannot be claimed
 		PaymentNotAvailable,
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		// An extrinsic that transfers the next scheduled payment
-		// to the payee's account, if the payment is available
+		/// An extrinsic that transfers the next scheduled payment
+		/// to the payee's account, if the payment is available
 		pub fn claim (
 			origin: OriginFor<T>, 
 			payer_id: T::AccountId,
@@ -239,44 +266,31 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		// An extrinsic that initializes a payment and commits
-		// it to storage
+		/// An extrinsic that initializes a payment and commits
+		/// it to storage
 		pub fn initialize_payment (
 			origin: OriginFor<T>, 
-			payee: T::AccountId,
-			payment_id: T::PaymentId,
-			rfp_reference_id: T::RFPReferenceId,
-			total_payment_amount: BalanceOf<T>,
-			payment_schedule: BoundedVec<ScheduledPayment<T>, T::MaxPaymentsScheduled>,
-			payment_method: PaymentMethod<T>,
-			administrator_id: T::AccountId,
+			payment_details: PaymentDetails<T>,
 		) -> DispatchResult {
 			let payer = ensure_signed(origin)?;
-			let payment_details = <PaymentAgreements<T>>::get(
+			let payee = payment_details.payee.clone();
+			let payment_id = payment_details.payment_id;
+			let payment_details_exists = <PaymentAgreements<T>>::get(
 				(&payer, &payee, &payment_id)
 			);
 			ensure!(
-				payment_details.is_none(),
+				payment_details_exists.is_none(),
 				Error::<T>::PaymentAlreadyInitialized
 			);
-
-			let payment_details = PaymentDetails {
-				payer: payer.clone(),
-				payee: payee.clone(),
-				payment_id: payment_id.clone(),
-				rfp_reference_id,
-				total_payment_amount,
-				payment_schedule,
-				payment_method: payment_method.clone(),
-				administrator_id,
-			};
+			let total_payment_amount = payment_details.total_payment_amount;
+			let paying_account = payment_details.payment_method.account_id.clone();
 			<PaymentAgreements<T>>::insert(
 				(&payer, &payee, payment_id), 
 				payment_details
 			);
 			Self::deposit_event(
 				Event::PaymentInitialized(
-					payment_method.account_id, 
+					paying_account, 
 					payee, 
 					total_payment_amount
 				)
@@ -301,8 +315,8 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		// An extrinsic that unblocks the next payment, 
-		// allowing it to be claimed
+		/// An extrinsic that unblocks the next payment, 
+		/// allowing it to be claimed
 		pub fn release_next_payment (
 			origin: OriginFor<T>, 
 			payee_id: T::AccountId,
@@ -347,7 +361,7 @@ pub mod pallet {
 					Self::deposit_event(
 						Event::NextPaymentReleaseStatusChanged(
 							payer.clone(), 
-							payment_id.clone(), 
+							*payment_id, 
 							released
 						)
 					);

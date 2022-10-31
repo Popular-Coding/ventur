@@ -286,7 +286,6 @@ impl pallet_payments::Config for Runtime {
 	type PaymentId = u32;
 	type RFPReferenceId = u32;
 	type PaymentCurrency = Balances;
-	type MaxPaymentsScheduled = ConstU32<50>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 } 
 
