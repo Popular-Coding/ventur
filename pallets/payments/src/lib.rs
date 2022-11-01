@@ -86,7 +86,6 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 	use pallet_escrow;
-	use pallet_escrow::EscrowDetails;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
@@ -300,16 +299,12 @@ pub mod pallet {
 							payment_amount,
 						)?;
 					} else {
-						let escrow_details = 
-							pallet_escrow::Pallet::<T>::escrow(payment_account_id)
-								.ok_or(<Error<T>>::NoEscrowAccountFound)?;
-							Pallet::<T>::transfer_funds_from_escrow_account(
-								&escrow_details,
-								payment_account_id,
-								&payer_id,
-								&payee,
-								payment_amount
-							)?;
+						Pallet::<T>::transfer_funds_from_escrow_account(
+							payment_account_id,
+							&payer_id,
+							&payee,
+							payment_amount
+						)?
 					}
 					
 					// If successfully claimed, get rid of the first payment
@@ -443,46 +438,54 @@ pub mod pallet {
 		}
 
 		pub fn transfer_funds_from_escrow_account(
-			escrow_details: &EscrowDetails<T::AccountId, T>, 
 			escrow_account_id: &T::AccountId,
 			admin_account_id: &T::AccountId, 
 			payee: &T::AccountId,
 			payment_amount: BalanceOf<T>,
 		) -> DispatchResult {
-			ensure!(
-				!escrow_details.is_frozen,
-				Error::<T>::Frozen
-			);
-			// Make sure the payer is an Admin and the
-			// transfer can be completed
-			ensure!(
-				escrow_details.admins.iter().any(|x| *x == admin_account_id.clone()),
-				Error::<T>::Unauthorized
-			);
+			<pallet_escrow::Escrow<T>>::try_mutate(
+				&escrow_account_id, 
+				| maybe_escrow_details | -> DispatchResult {
+					let escrow_details =
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoEscrowAccountFound)?;
+						
+					ensure!(
+						!escrow_details.is_frozen,
+						Error::<T>::Frozen
+					);
+					// Make sure the payer is an Admin and the
+					// transfer can be completed
+					ensure!(
+						escrow_details.admins.iter().any(|x| *x == admin_account_id.clone()),
+						Error::<T>::Unauthorized
+					);
 
-			// Unlock funds
-			T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, &escrow_account_id);
+					// Unlock funds
+					T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, &escrow_account_id);
 
-			// Transfer the unlocked funds
-			T::PaymentCurrency::transfer(
-				escrow_account_id,
-				&payee,
-				payment_amount,
-				AllowDeath,
+					// Transfer the unlocked funds
+					T::PaymentCurrency::transfer(
+						escrow_account_id,
+						&payee,
+						payment_amount,
+						AllowDeath,
+					)?;
+
+					let payment_amount_as_128: u128 = 
+						TryInto::<u128>::try_into(payment_amount).ok().unwrap();
+
+					escrow_details.amount -= payment_amount_as_128.try_into().ok().unwrap();
+					
+					// Lock the remaining funds
+					T::EscrowCurrency::set_lock(
+						pallet_escrow::ESCROW_LOCK,
+						&escrow_account_id,
+						escrow_details.amount,
+						WithdrawReasons::all(),
+					);
+					Ok(())
+				}
 			)?;
-
-			let payment_amount_as_128: u128 = 
-				TryInto::<u128>::try_into(payment_amount).ok().unwrap();
-
-			let remaining_funds = escrow_details.amount - payment_amount_as_128.try_into().ok().unwrap();
-			
-			// Lock the remaining funds
-			T::EscrowCurrency::set_lock(
-				pallet_escrow::ESCROW_LOCK,
-				&escrow_account_id,
-				remaining_funds,
-				WithdrawReasons::all(),
-			);
 			Ok(())
 		}
 	}
