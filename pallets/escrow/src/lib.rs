@@ -83,12 +83,12 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
-	const ESCROW_LOCK: LockIdentifier = *b"Escrowed";
+	pub const ESCROW_LOCK: LockIdentifier = *b"Escrowed";
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type PaymentCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+		type EscrowCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber> + Clone + Eq;
 	}
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -100,11 +100,11 @@ pub mod pallet {
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	pub struct EscrowDetails<AccountId, T:Config> {
-		pub(super) admins: BoundedVec<AccountId, ConstU32<{VEC_LIMIT}>>,
+		pub admins: BoundedVec<AccountId, ConstU32<{VEC_LIMIT}>>,
 		pub(super) contributions: BoundedVec<Contribution<AccountId, T>, ConstU32<{VEC_LIMIT}>>,
-		pub(super) amount: BalanceOf<T>,
+		pub amount: BalanceOf<T>,
 		pub(super) total_contributed: BalanceOf<T>,
-		pub(super) is_frozen: bool,
+		pub is_frozen: bool,
 		pub(super) is_open: bool,
 	}
 
@@ -114,7 +114,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn escrow)]
-	pub(super) type Escrow<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, EscrowDetails<T::AccountId, T>, OptionQuery>;
+	pub type Escrow<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, EscrowDetails<T::AccountId, T>, OptionQuery>;
 
 	// The Administrator storage map needs to be reevaluated, 
 	// originally intended to provide a quick means of querying all of the escrows tied to an account
@@ -123,7 +123,7 @@ pub mod pallet {
 	#[pallet::getter(fn administrator)]
 	pub(super) type Administrator<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Blake2_128Concat, T::AccountId, T::BlockNumber, OptionQuery>;
 
-	pub type BalanceOf<T> = <<T as Config>::PaymentCurrency as Currency<
+	pub type BalanceOf<T> = <<T as Config>::EscrowCurrency as Currency<
 		<T as frame_system::Config>::AccountId,
 	>>::Balance;
 
@@ -233,7 +233,7 @@ pub mod pallet {
 				<frame_system::Pallet<T>>::block_number(),
 			);
 
-			T::PaymentCurrency::set_lock(
+			T::EscrowCurrency::set_lock(
 				ESCROW_LOCK,
 				&who,
 				BalanceOf::<T>::zero(),
@@ -270,14 +270,14 @@ pub mod pallet {
 			}
 
 			// Confirm contribution is smaller than escrow amount
-			T::PaymentCurrency::ensure_can_withdraw(
+			T::EscrowCurrency::ensure_can_withdraw(
 				&funder,
 				amount,
 				WithdrawReasons::all(),
-				T::PaymentCurrency::free_balance(&funder).checked_sub(&amount).unwrap()
+				T::EscrowCurrency::free_balance(&funder).checked_sub(&amount).unwrap()
 			)?;
 			ensure!(
-				T::PaymentCurrency::free_balance(&funder) >= amount,
+				T::EscrowCurrency::free_balance(&funder) >= amount,
 				Error::<T>::InsufficientBalance
 			);
 
@@ -297,13 +297,13 @@ pub mod pallet {
 					};
 					escrow_details.contributions.try_push(contribution).ok();
 
-					T::PaymentCurrency::transfer(
+					T::EscrowCurrency::transfer(
 						&funder,
 						&escrow_id,
 						amount,
 						AllowDeath,
 					)?;
-					T::PaymentCurrency::set_lock(
+					T::EscrowCurrency::set_lock(
 						ESCROW_LOCK,
 						&escrow_id,
 						escrow_details.amount,
@@ -354,10 +354,10 @@ pub mod pallet {
 				Error::<T>::InsufficientEscrowFunds
 			);
 			
-			T::PaymentCurrency::remove_lock(ESCROW_LOCK, &escrow_id);
+			T::EscrowCurrency::remove_lock(ESCROW_LOCK, &escrow_id);
 
 			// Send funds to payee
-			T::PaymentCurrency::transfer(
+			T::EscrowCurrency::transfer(
 				&escrow_id,
 				&payee,
 				amount,
@@ -373,7 +373,7 @@ pub mod pallet {
 					
 					escrow_details.amount -= amount;
 					
-					T::PaymentCurrency::set_lock(
+					T::EscrowCurrency::set_lock(
 						ESCROW_LOCK,
 						&escrow_id.clone(),
 						escrow_details.amount,
@@ -418,7 +418,7 @@ pub mod pallet {
 				TryInto::<u128>::try_into(escrow_details.total_contributed).ok().unwrap();
 			
 			// Unlock Escrow for Distribution
-			T::PaymentCurrency::remove_lock(ESCROW_LOCK, &escrow_id);
+			T::EscrowCurrency::remove_lock(ESCROW_LOCK, &escrow_id);
 			
 			// Distribute remaining funds to contributors proportionately to their contributions
 			escrow_details.contributions.iter().for_each(|contribution|{
@@ -427,7 +427,7 @@ pub mod pallet {
 				let close_disbursement: u128 = 
 					(escrow_total_at_closing as f64 * (contributed_amount as f64/escrow_total_contributed as f64)) as u128;
 				// Transfer the funds to the contributor
-				T::PaymentCurrency::transfer(
+				T::EscrowCurrency::transfer(
 					&escrow_id.clone(),
 					&contribution.contributor,
 					close_disbursement.try_into().ok().unwrap(),

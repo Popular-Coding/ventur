@@ -78,12 +78,15 @@ pub mod pallet {
 		traits::{
 			Currency, 
 			ExistenceRequirement::AllowDeath, 
+			WithdrawReasons, 
 			UnixTime,
 			LockableCurrency,
 		},
 		storage::bounded_vec::BoundedVec,
 	};
 	use frame_system::pallet_prelude::*;
+	use pallet_escrow;
+	use pallet_escrow::EscrowDetails;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
@@ -170,7 +173,7 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + pallet_escrow::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type PaymentId: Member + Parameter + From<u32> + Clone + Eq + Copy;
 		type RFPReferenceId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
@@ -233,6 +236,22 @@ pub mod pallet {
 		/// The scheduled date for payment has not passed yet, 
 		/// meaning the payment cannot be claimed
 		PaymentNotAvailable,
+
+		/// A payment is specified for Escrow, but no associated
+		/// escrow account was found
+		NoEscrowAccountFound,
+
+		/// The Escrow account has been frozen
+		Frozen,
+
+		/// The payer accessing the escrow is not an admin
+		Unauthorized,
+
+		/// Attempting to claim payment from escrow for oneself
+		SelfDistributionAttempt,
+
+		/// Trying to claim more funds than exist in an escrow
+		InsufficientEscrowFunds,
 	}
 
 	#[pallet::call]
@@ -277,9 +296,20 @@ pub mod pallet {
 					if payment_method.payment_source == PaymentSource::PersonalAccount {
 						Pallet::<T>::transfer_funds_from_personal_account(
 							payment_account_id,
-							&payee, 
-							payment_amount
+							&payee,
+							payment_amount,
 						)?;
+					} else {
+						let escrow_details = 
+							pallet_escrow::Pallet::<T>::escrow(payment_account_id)
+								.ok_or(<Error<T>>::NoEscrowAccountFound)?;
+							Pallet::<T>::transfer_funds_from_escrow_account(
+								&escrow_details,
+								payment_account_id,
+								&payer_id,
+								&payee,
+								payment_amount
+							)?;
 					}
 					
 					// If successfully claimed, get rid of the first payment
@@ -410,6 +440,50 @@ pub mod pallet {
 				payment_amount,
 				AllowDeath,
 			)
+		}
+
+		pub fn transfer_funds_from_escrow_account(
+			escrow_details: &EscrowDetails<T::AccountId, T>, 
+			escrow_account_id: &T::AccountId,
+			admin_account_id: &T::AccountId, 
+			payee: &T::AccountId,
+			payment_amount: BalanceOf<T>,
+		) -> DispatchResult {
+			ensure!(
+				!escrow_details.is_frozen,
+				Error::<T>::Frozen
+			);
+			// Make sure the payer is an Admin and the
+			// transfer can be completed
+			ensure!(
+				escrow_details.admins.iter().any(|x| *x == admin_account_id.clone()),
+				Error::<T>::Unauthorized
+			);
+
+			// Unlock funds
+			T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, &escrow_account_id);
+
+			// Transfer the unlocked funds
+			T::PaymentCurrency::transfer(
+				escrow_account_id,
+				&payee,
+				payment_amount,
+				AllowDeath,
+			)?;
+
+			let payment_amount_as_128: u128 = 
+				TryInto::<u128>::try_into(payment_amount).ok().unwrap();
+
+			let remaining_funds = escrow_details.amount - payment_amount_as_128.try_into().ok().unwrap();
+			
+			// Lock the remaining funds
+			T::EscrowCurrency::set_lock(
+				pallet_escrow::ESCROW_LOCK,
+				&escrow_account_id,
+				remaining_funds,
+				WithdrawReasons::all(),
+			);
+			Ok(())
 		}
 	}
 }

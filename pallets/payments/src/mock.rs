@@ -29,6 +29,7 @@ frame_support::construct_runtime!(
         Payments: pallet_payments::{Pallet, Call, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EscrowModule: pallet_escrow::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -65,6 +66,11 @@ impl pallet_payments::Config for Test {
 	type RFPReferenceId = u32;
 	type PaymentCurrency = Balances;
 	type TimeProvider = pallet_timestamp::Pallet<Test>;
+}
+
+impl pallet_escrow::Config for Test {
+	type Event = Event;
+	type EscrowCurrency = Balances;
 }
 
 pub fn test_externalities() -> sp_io::TestExternalities {

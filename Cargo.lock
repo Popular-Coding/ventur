@@ -4020,6 +4020,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-escrow",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
