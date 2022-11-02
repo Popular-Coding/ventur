@@ -6,14 +6,6 @@ on:
   push:
     paths: 
       - 'pallets/payments/**'
-    paths-ignore:
-      - '.vscode/**'
-      - 'docs/**'
-      - '.gitignore'
-      - '**.md'
-      - '**.png'
-      - '**/tests.rs'
-      - '**/mock.rs'
     branches-ignore:
       - main 
 
