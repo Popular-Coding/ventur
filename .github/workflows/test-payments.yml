@@ -1,13 +1,12 @@
-name: Unit Tests
+name: Payments Unit Tests
 
 # Controls when the action will run.
 on:
   # Triggers the workflow on pull request events but only for the master branch
-  pull_request:
-    branches: 
-      - main
+  push:
+    paths: 
+      - 'pallets/payments/**'
     paths-ignore:
-      - '.github/**'
       - '.vscode/**'
       - 'docs/**'
       - '.gitignore'
@@ -15,9 +14,8 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-  push:
-    branches: 
-      - main
+    branches-ignore:
+      - main 
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -43,4 +41,4 @@ jobs:
 
       - name: Check Unit Tests
         run: |
-          SKIP_WASM_BUILD=1 cargo test
+          SKIP_WASM_BUILD=1 cargo test -p pallet-payments
