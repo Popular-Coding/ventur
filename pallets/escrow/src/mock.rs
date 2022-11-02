@@ -79,7 +79,7 @@ impl pallet_balances::Config for Test {
 
 impl pallet_escrow::Config for Test {
 	type Event = Event;
-	type PaymentCurrency = Balances;
+	type EscrowCurrency = Balances;
 }
 
 // Build genesis storage according to the mock runtime.
