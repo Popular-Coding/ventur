@@ -1,7 +1,11 @@
-License: GPLv3
-
-[Payment Pallet Rust Docs](https://docs.ventur.network/pallet_payments/index.html)
 # Payment Pallet Testing Guide (Ubuntu)
+<div align="center">
+
+[![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![rustdoc](https://img.shields.io/badge/rustdoc-payment_pallet-informational)](https://docs.ventur.network/pallet_payments/index.html)
+[![Payments Unit Test](https://github.com/Popular-Coding/ventur/actions/workflows/test-payments.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test-payments.yml)
+
+</div>
 
 ## Prerequisite Setup
 ### Install Dependencies 
