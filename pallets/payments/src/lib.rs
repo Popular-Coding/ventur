@@ -473,7 +473,7 @@ pub mod pallet {
 
 					let payment_amount_as_128: u128 = 
 						TryInto::<u128>::try_into(payment_amount).ok().unwrap();
-					let amount_as_128: u128 = TryInto::<u128>::try_into(escrow_details.amount.clone()).ok().unwrap();
+					//let amount_as_128: u128 = TryInto::<u128>::try_into(escrow_details.amount.clone()).ok().unwrap();
 					escrow_details.amount -= payment_amount_as_128.try_into().ok().unwrap();
 					
 					// Lock the remaining funds
