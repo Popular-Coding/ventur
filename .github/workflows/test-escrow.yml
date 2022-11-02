@@ -14,7 +14,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  test:
+  test-escrow-pallet:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
@@ -31,6 +31,6 @@ jobs:
       - name: Install and configure Rust
         uses: ./.github/actions/install-rust 
 
-      - name: Check Unit Tests
+      - name: Check Escrow Pallets Unit Tests
         run: |
           SKIP_WASM_BUILD=1 cargo test -p pallet-escrow
