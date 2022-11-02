@@ -462,7 +462,7 @@ pub mod pallet {
 
 					// Unlock funds
 					T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, &escrow_account_id);
-
+					
 					// Transfer the unlocked funds
 					T::PaymentCurrency::transfer(
 						escrow_account_id,
@@ -473,7 +473,7 @@ pub mod pallet {
 
 					let payment_amount_as_128: u128 = 
 						TryInto::<u128>::try_into(payment_amount).ok().unwrap();
-
+					let amount_as_128: u128 = TryInto::<u128>::try_into(escrow_details.amount.clone()).ok().unwrap();
 					escrow_details.amount -= payment_amount_as_128.try_into().ok().unwrap();
 					
 					// Lock the remaining funds
