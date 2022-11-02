@@ -44,16 +44,7 @@ jobs:
           sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
 
       - name: Install and configure Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source ~/.cargo/env
-          rustup default stable
-          rustup update stable 
-          rustup update nightly 
-          rustup install nightly-2022-09-19 
-          rustup override set nightly-2022-09-19
-          rustup target add wasm32-unknown-unknown
-          rustup target add wasm32-unknown-unknown --toolchain nightly 
+        uses: ./.github/actions/install-rust 
 
       - name: Cargo Clippy 
         run: |
@@ -75,16 +66,7 @@ jobs:
           brew install openssl
 
       - name: Install and configure Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source ~/.cargo/env
-          rustup default stable
-          rustup update stable 
-          rustup update nightly 
-          rustup install nightly-2022-09-19 
-          rustup override set nightly-2022-09-19
-          rustup target add wasm32-unknown-unknown
-          rustup target add wasm32-unknown-unknown --toolchain nightly 
+        uses: ./.github/actions/install-rust 
 
       - name: Cargo Clippy 
         run: |
