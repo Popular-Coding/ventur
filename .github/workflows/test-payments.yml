@@ -1,30 +1,20 @@
-name: Unit Tests
+name: Payments Unit Tests
 
 # Controls when the action will run.
 on:
   # Triggers the workflow on pull request events but only for the master branch
-  pull_request:
-    branches: 
-      - main
-    paths-ignore:
-      - '.github/**'
-      - '.vscode/**'
-      - 'docs/**'
-      - '.gitignore'
-      - '**.md'
-      - '**.png'
-      - '**/tests.rs'
-      - '**/mock.rs'
   push:
-    branches: 
-      - main
+    paths: 
+      - 'pallets/payments/**'
+    branches-ignore:
+      - main 
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  test:
+  test-payment-pallet:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
 
@@ -41,6 +31,6 @@ jobs:
       - name: Install and configure Rust
         uses: ./.github/actions/install-rust 
 
-      - name: Check Unit Tests
+      - name: Check Payments Pallet Unit Tests
         run: |
-          SKIP_WASM_BUILD=1 cargo test
+          SKIP_WASM_BUILD=1 cargo test -p pallet-payments
