@@ -431,7 +431,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::PaymentCurrency::transfer(
 				payment_account_id,
-				&payee,
+				payee,
 				payment_amount,
 				AllowDeath,
 			)
@@ -461,12 +461,12 @@ pub mod pallet {
 					);
 
 					// Unlock funds
-					T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, &escrow_account_id);
+					T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, escrow_account_id);
 					
 					// Transfer the unlocked funds
 					T::PaymentCurrency::transfer(
 						escrow_account_id,
-						&payee,
+						payee,
 						payment_amount,
 						AllowDeath,
 					)?;
@@ -479,7 +479,7 @@ pub mod pallet {
 					// Lock the remaining funds
 					T::EscrowCurrency::set_lock(
 						pallet_escrow::ESCROW_LOCK,
-						&escrow_account_id,
+						escrow_account_id,
 						escrow_details.amount,
 						WithdrawReasons::all(),
 					);
