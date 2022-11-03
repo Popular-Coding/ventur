@@ -35,6 +35,28 @@
 //! While the Crowdloan Rewards Pallet supports claiming rewards,
 //! this Payments Pallet supports the instantiation of scheduled payments
 //! as well as lump sum, one-time payments
+//!
+//! - [`Config`]
+//! - [`Call`]
+//! - [`Pallet`]
+//!
+//! ## Overview
+//!
+//! The Payments pallet provides functions for:
+//!
+//! - Setting up payments
+//! - Claiming payments
+//! - Blocking/Releasing payments from being claimed
+//!
+//! ## Interface
+//!
+//! ### Dispatchable Functions
+//!
+//! - `initialize_payment` - Creates the payment details and commits them to storage
+//! - `claim` - Transfers the next available funds to the payee's account
+//! - `block_next_payment` - Prevent the claiming of the next and all subsequent payments
+//! - `release_next_payment` - Free up the next available and all subsequent payments for claiming
+
 
 #![cfg_attr(not(feature = "std"), no_std)]
 pub use pallet::*;
@@ -53,10 +75,17 @@ pub mod pallet {
 	use frame_support::{
 		pallet_prelude::RuntimeDebugNoBound,
 		pallet_prelude::*,
-		traits::{Currency, ExistenceRequirement::AllowDeath, UnixTime},
+		traits::{
+			Currency, 
+			ExistenceRequirement::AllowDeath, 
+			WithdrawReasons, 
+			UnixTime,
+			LockableCurrency,
+		},
 		storage::bounded_vec::BoundedVec,
 	};
 	use frame_system::pallet_prelude::*;
+	use pallet_escrow;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
@@ -143,11 +172,11 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + pallet_escrow::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type PaymentId: Member + Parameter + From<u32> + Clone + Eq + Copy;
 		type RFPReferenceId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
-		type PaymentCurrency: Currency<Self::AccountId> + Clone + Eq;
+		type PaymentCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber> + Clone + Eq;
 		type TimeProvider: UnixTime;
 	}
 
@@ -206,6 +235,22 @@ pub mod pallet {
 		/// The scheduled date for payment has not passed yet, 
 		/// meaning the payment cannot be claimed
 		PaymentNotAvailable,
+
+		/// A payment is specified for Escrow, but no associated
+		/// escrow account was found
+		NoEscrowAccountFound,
+
+		/// The Escrow account has been frozen
+		Frozen,
+
+		/// The payer accessing the escrow is not an admin
+		Unauthorized,
+
+		/// Attempting to claim payment from escrow for oneself
+		SelfDistributionAttempt,
+
+		/// Trying to claim more funds than exist in an escrow
+		InsufficientEscrowFunds,
 	}
 
 	#[pallet::call]
@@ -247,12 +292,20 @@ pub mod pallet {
 					let payment_method = &payment_details.payment_method;
 					let payment_account_id = &payment_method.account_id;
 					ensure!(next_payment.released, <Error<T>>::PaymentNotReleased);
-					T::PaymentCurrency::transfer(
-						payment_account_id,
-						&payee,
-						payment_amount,
-						AllowDeath,
-					)?;
+					if payment_method.payment_source == PaymentSource::PersonalAccount {
+						Pallet::<T>::transfer_funds_from_personal_account(
+							payment_account_id,
+							&payee,
+							payment_amount,
+						)?;
+					} else {
+						Pallet::<T>::transfer_funds_from_escrow_account(
+							payment_account_id,
+							&payer_id,
+							&payee,
+							payment_amount
+						)?
+					}
 					
 					// If successfully claimed, get rid of the first payment
 					payment_schedule.remove(0);
@@ -364,6 +417,71 @@ pub mod pallet {
 							*payment_id, 
 							released
 						)
+					);
+					Ok(())
+				}
+			)?;
+			Ok(())
+		}
+
+		pub fn transfer_funds_from_personal_account(
+			payment_account_id: &T::AccountId, 
+			payee: &T::AccountId,
+			payment_amount: BalanceOf<T>,
+		) -> DispatchResult {
+			T::PaymentCurrency::transfer(
+				payment_account_id,
+				payee,
+				payment_amount,
+				AllowDeath,
+			)
+		}
+
+		pub fn transfer_funds_from_escrow_account(
+			escrow_account_id: &T::AccountId,
+			admin_account_id: &T::AccountId, 
+			payee: &T::AccountId,
+			payment_amount: BalanceOf<T>,
+		) -> DispatchResult {
+			<pallet_escrow::Escrow<T>>::try_mutate(
+				&escrow_account_id, 
+				| maybe_escrow_details | -> DispatchResult {
+					let escrow_details =
+						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoEscrowAccountFound)?;
+						
+					ensure!(
+						!escrow_details.is_frozen,
+						Error::<T>::Frozen
+					);
+					// Make sure the payer is an Admin and the
+					// transfer can be completed
+					ensure!(
+						escrow_details.admins.iter().any(|x| *x == admin_account_id.clone()),
+						Error::<T>::Unauthorized
+					);
+
+					// Unlock funds
+					T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, escrow_account_id);
+					
+					// Transfer the unlocked funds
+					T::PaymentCurrency::transfer(
+						escrow_account_id,
+						payee,
+						payment_amount,
+						AllowDeath,
+					)?;
+
+					let payment_amount_as_128: u128 = 
+						TryInto::<u128>::try_into(payment_amount).ok().unwrap();
+					//let amount_as_128: u128 = TryInto::<u128>::try_into(escrow_details.amount.clone()).ok().unwrap();
+					escrow_details.amount -= payment_amount_as_128.try_into().ok().unwrap();
+					
+					// Lock the remaining funds
+					T::EscrowCurrency::set_lock(
+						pallet_escrow::ESCROW_LOCK,
+						escrow_account_id,
+						escrow_details.amount,
+						WithdrawReasons::all(),
 					);
 					Ok(())
 				}
