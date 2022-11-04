@@ -444,7 +444,7 @@ pub mod pallet {
 			payment_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			<pallet_escrow::Escrow<T>>::try_mutate(
-				&escrow_account_id, 
+				escrow_account_id, 
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoEscrowAccountFound)?;
