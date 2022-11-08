@@ -150,3 +150,43 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
+
+#### Initialize a Payment from Escrow
+
+1. Create an escrow
+
+    | _Create an Escrow_ |
+    |:--:|
+    |![Create an escrow](docs/create-escrow.png)|
+
+2. Fund an Escrow
+Call the `fundEscrow` extrinsic with a balance of:
+`1000000000000000000`
+
+    | _Fund an Escrow_ |
+    |:--:|
+    |![Fund Escrow](docs/fund-escrow.png)|
+
+3. Check Account Balances
+
+    | _Note Account Balances_ |
+    |:--:|
+    |![Account Balances](docs/note-accounts.png)|
+
+4. Initialize a payment contract
+
+    | _Initializing a Payment From Escrow_ |
+    |:--:|
+    |![Initialize Payment Contract](docs/init-escrow-pay.png)|
+
+5. Claim a payment
+
+    | _Claiming A Payment From Escrow_ |
+    |:--:|
+    |![Claim payment from escrow](docs/claim-escrow-pay.png)|
+
+6. Confirm Expected Changes to Account Balances
+
+    | _Confirm Payment has Come from the Payer's Escrow_ |
+    |:--:|
+    |![Payment From Escrow](docs/balances-pay-from-escrow.png)|
