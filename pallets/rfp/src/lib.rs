@@ -57,9 +57,13 @@ pub(crate) mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{
+		pallet_prelude::RuntimeDebugNoBound,
 		pallet_prelude::*,
 		traits::{
 			Currency,
@@ -100,10 +104,10 @@ pub mod pallet {
 		BidOnRFP(T::AccountId, T::RFPId, BalanceOf<T>),
 		/// RFP Admin creates a shortlist of the bids on an RFP
 		/// [account, rfp]
-		ShortlistRFP(T::AccountId, T::RFPId),
+		ShortlistBid(T::AccountId, T::RFPId),
 		/// Updates a bid on an RFP
-		/// [account, rfp]
-		UpdateRFPBid(T::AccountId, T::RFPId),
+		/// [account, rfp, amount]
+		UpdateRFPBid(T::AccountId, T::RFPId, BalanceOf<T>),
 		/// Accepts a bid on an RFP
 		/// [account, rfp]
 		AcceptRFPBid(T::AccountId, T::RFPId),
@@ -119,14 +123,81 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		 /// A dispatchable to create an RFP
-		 #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
-		 pub fn create_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
-			// Ensure transaction signed
+		/// A dispatchable to create an RFP
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn create_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			// TODO: Create and Store RFP
 			Self::deposit_event(Event::CreateRFP(who, rfp_id));
 			Ok(())
-		 }
+		}
+
+		/// A dispatchable to modify an existing RFP
+		 #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn update_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			// TODO: Update Stored RFP
+			Self::deposit_event(Event::UpdateRFP(who, rfp_id));
+			Ok(())
+		}
+		
+		/// A dispatchable to cancel an existing RFP
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn cancel_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			// TODO: Cancel Stored RFP
+			Self::deposit_event(Event::CancelRFP(who, rfp_id));
+			Ok(())
+		}
+
+		/// A dispatchable to Bid on an RFP
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn bid_on_rfp(
+			origin: OriginFor<T>, 
+			rfp_id: T::RFPId, 
+			amount: BalanceOf<T>
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			// TODO: Bid on RFP
+			Self::deposit_event(Event::BidOnRFP(who, rfp_id, amount));
+			Ok(())
+		}
+
+		/// A dispatchable to create a shortlist of bids
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn shortlist_bid(
+			origin: OriginFor<T>, 
+			rfp_id: T::RFPId, 
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			// TODO: Bid on RFP
+			Self::deposit_event(Event::ShortlistBid(who, rfp_id));
+			Ok(())
+		}
+
+		/// A dispatchable to update a bid on an RFP
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn update_rfp_bid(
+			origin: OriginFor<T>, 
+			rfp_id: T::RFPId, 
+			updated_amount: BalanceOf<T>
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			// TODO: update bid
+			Self::deposit_event(Event::UpdateRFPBid(who, rfp_id, updated_amount));
+			Ok(())
+		}
+
+		/// A dispatchable to accept a bid on an RFP
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		pub fn accept_rfp_bid(
+			origin: OriginFor<T>, 
+			rfp_id: T::RFPId, 
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			// TODO: accept bid
+			Self::deposit_event(Event::AcceptRFPBid(who, rfp_id));
+			Ok(())
+		}
 	}
 }

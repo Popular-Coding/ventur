@@ -294,7 +294,6 @@ impl pallet_rfp::Config for Runtime {
 	type Event = Event;
 	type RFPId = u128;
 	type Currency = Balances;
-
 } 
 
 // Configure the NT-NFT pallet in pallets/nt-nft
