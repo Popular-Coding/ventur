@@ -63,7 +63,6 @@ mod benchmarking;
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{
-		pallet_prelude::RuntimeDebugNoBound,
 		pallet_prelude::*,
 		traits::{
 			Currency,
@@ -115,10 +114,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
 	}
 
 	#[pallet::call]

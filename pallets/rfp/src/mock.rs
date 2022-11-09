@@ -60,7 +60,7 @@ impl system::Config for Test {
 
 impl pallet_rfp::Config for Test {
 	type Event = Event;
-	type RFPId = u32;
+	type RFPId = u64;
 	type Currency = Balances;
 }
 
