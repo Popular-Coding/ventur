@@ -1,7 +1,11 @@
 # Escrow Pallet
+<div align="center">
 
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
 [![rustdoc](https://img.shields.io/badge/rustdoc-escrow_pallet-informational)](https://docs.ventur.network/pallet_escrow/index.html)
+[![Escrow Unit Test](https://github.com/Popular-Coding/ventur/actions/workflows/test-escrow.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test-escrow.yml)
+
+</div>
 
 ## Escrow Pallet Setup and Testing Guide (Ubuntu)
 
@@ -43,7 +47,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 The following command pulls the ventur-node code from our github repo:
 
 ```bash
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
 ```

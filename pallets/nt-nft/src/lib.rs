@@ -161,8 +161,22 @@ pub mod pallet {
 		CollectionIdAlreadyExists,
 		/// CollectionId does not exist
 		CollectionIdDoesNotExist,
+		/// Collection Is Frozen
+		CollectionFrozen,
+		/// Collection is not Frozen (so thaw will error)
+		CollectionNotFrozen,
+		/// ItemId does not exist
+		ItemIdDoesNotExist,
+		/// ItemId already exists (error on repeated minting of same id)
+		ItemIdAlreadyExists,
+		/// Item is not assigned, accepting assignment fails
+		ItemIsNotAssigned,
+		/// Item is assigned, cannot be assigned
+		ItemIsAlreadyAssigned,
 		/// Caller is not authorized to perform this action
 		Unauthorized,
+		/// Caller is attempting to accept an ntnft they do not have an assignment for
+		NoAssignmentForThisAccount,
 	}
 
 	#[pallet::call]
@@ -188,14 +202,15 @@ pub mod pallet {
 		pub fn freeze_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
 			let who = ensure_signed(origin)?;
-			// Ensure the Collection to be frozen exists
-			ensure!(<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdDoesNotExist);
-
-			// Get Collection Details
-			let details = <Collection<T>>::get(&collection_id);
+			
+			// Check that collection exists
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
+			
+			// Check that collection is not frozen
+			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
 
 			// Ensure that the caller is the owner
-			ensure!(who == details.unwrap().owner, <Error<T>>::Unauthorized);
+			ensure!(who == collection_details.owner, <Error<T>>::Unauthorized);
 
 			// Freeze the account
 			<Collection<T>>::try_mutate(
@@ -216,15 +231,15 @@ pub mod pallet {
 		pub fn thaw_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
 			let who = ensure_signed(origin)?;
-
-			// Ensure the Collection to be frozen exists
-			ensure!(<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdDoesNotExist);
 		
-			// Get Collection Details
-			let details = <Collection<T>>::get(&collection_id);
+			// Check that collection exists
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
+			
+			// Check that collection is frozen
+			ensure!(collection_details.is_frozen, <Error<T>>::CollectionNotFrozen);
 
 			// Ensure that the caller is the owner
-			ensure!(who == details.unwrap().owner, <Error<T>>::Unauthorized);
+			ensure!(who == collection_details.owner, <Error<T>>::Unauthorized);
 
 			<Collection<T>>::try_mutate(
 				&collection_id, 
@@ -237,6 +252,229 @@ pub mod pallet {
 				}
 			)?;
 			Self::deposit_event(Event::ThawCollection(collection_id, who));
+			Ok(())
+		}
+
+		// TODO destroy_collection 
+		// (might need to reevaluate whether destroy makes sense, might need to just retire collection)
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
+		pub fn mint_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
+			// Ensure transaction signed, collection exists, and caller is authorized
+			let who = ensure_signed(origin)?;
+
+			// Check that collection exists
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
+
+			// Check that collection is not frozen
+			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
+
+			// Ensure that the caller is the owner
+			ensure!(who == collection_details.owner, <Error<T>>::Unauthorized);
+
+			// Check that item does not already exist
+			ensure!(!<Item<T>>::contains_key(&collection_id, &ntnft_id), <Error<T>>::ItemIdAlreadyExists);
+
+			// Insert Item and Update Collection
+			<Collection<T>>::try_mutate(
+				&collection_id, 
+				| maybe_collection_details | -> DispatchResult {
+					let collection_details =
+						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+					let new_amount = 
+						collection_details.amount.checked_add(1).ok_or(<Error<T>>::StorageOverflow)?;
+					collection_details.amount = new_amount;
+					let item = ItemDetails{
+						owner: who.clone(),
+						is_assigned: false,
+						is_accepted: false,
+					};
+					<Item::<T>>::insert(&collection_id, &ntnft_id, item);
+					Ok(())
+				}
+			)?;
+			
+			// Deposit Event
+			Self::deposit_event(Event::MintNTNFT(collection_id, ntnft_id, who));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
+		pub fn burn_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
+			// Ensure transaction signed
+			let who = ensure_signed(origin)?;
+
+			// Check that collection exists
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
+
+			// Check that collection is not frozen
+			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
+
+			// Ensure that the caller is the owner
+			ensure!(who == collection_details.owner, <Error<T>>::Unauthorized);
+
+			// Check that item exists
+			let item = <Item<T>>::get(&collection_id, &ntnft_id).ok_or(<Error<T>>::ItemIdDoesNotExist)?;
+
+			// Update Collection
+			<Collection<T>>::try_mutate(
+				&collection_id, 
+				| maybe_collection_details | -> DispatchResult {
+					let collection_details =
+						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
+					let new_amount = 
+						collection_details.amount.checked_sub(1).ok_or(<Error<T>>::StorageOverflow)?;
+					collection_details.amount = new_amount;
+					Ok(())
+				}
+			)?;
+
+			// Remove Item
+			if item.is_accepted {
+				<Assignment<T>>::remove(&collection_id, &item.owner);
+			} else if item.is_assigned {
+				<ProposedAssignment<T>>::remove(&collection_id, &item.owner);
+			}
+			<Item<T>>::remove(&collection_id, &ntnft_id);
+			
+			// Deposit Event
+			Self::deposit_event(Event::BurnNTNFT(collection_id, ntnft_id, who));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 1).ref_time())]
+		pub fn assign_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId, target_address: T::AccountId) -> DispatchResult {
+			// Ensure transaction is signed
+			let who = ensure_signed(origin)?;
+
+			// Check that collection exists
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
+			
+			// Check that collection is not frozen
+			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
+
+			// Ensure that the caller is the owner
+			ensure!(who == collection_details.owner, <Error<T>>::Unauthorized);
+
+			// Ensure the Item exists
+			ensure!(<Item<T>>::contains_key(&collection_id, &ntnft_id), <Error<T>>::ItemIdDoesNotExist);
+
+			<Item<T>>::try_mutate(
+				&collection_id, 
+				&ntnft_id, 
+				| maybe_item_details | -> DispatchResult {
+					let item_details =
+						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
+					ensure!(!item_details.is_accepted && !item_details.is_assigned, <Error<T>>::ItemIsAlreadyAssigned);
+					item_details.is_assigned = true;
+					<ProposedAssignment<T>>::insert(&collection_id, &target_address, ntnft_id);
+					Ok(())
+				}
+			)?;
+
+			// Deposit Event
+			Self::deposit_event(Event::AssignNTNFT(who, collection_id, ntnft_id, target_address));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
+		pub fn accept_assignment(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
+			// Ensure transaction is signed
+			let who = ensure_signed(origin)?;
+
+			// Check that target has a proposed assignment
+			ensure!(<ProposedAssignment<T>>::contains_key(&collection_id, &who), <Error<T>>::NoAssignmentForThisAccount);
+			
+			// Update item assignment
+			<Item<T>>::try_mutate(
+				&collection_id, 
+				&ntnft_id, 
+				| maybe_item_details | -> DispatchResult {
+					let item_details =
+						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
+					ensure!(
+						!item_details.is_accepted && 
+						item_details.is_assigned, 
+						<Error<T>>::ItemIsNotAssigned
+					);
+					item_details.is_accepted = true;
+					<ProposedAssignment<T>>::remove(&collection_id, &who);
+					<Assignment<T>>::insert(&collection_id, &who, ntnft_id);
+					Ok(())
+				}
+			)?;
+
+			// Deposit Event
+			Self::deposit_event(Event::AcceptAssignment(collection_id, ntnft_id, who));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 1).ref_time())]
+		pub fn cancel_assignment(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId, target_address: T::AccountId) -> DispatchResult {
+			// Ensure transaction is signed
+			let who = ensure_signed(origin)?;
+
+			// Check that target has a proposed assignment
+			ensure!(<ProposedAssignment<T>>::contains_key(&collection_id, &target_address), <Error<T>>::NoAssignmentForThisAccount);
+
+			// Check that collection exists
+			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
+
+			// Check that collection is not frozen
+			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
+
+			// Check that caller is authorized to call cancel (either collection owner, or asignee)
+			ensure!(<ProposedAssignment<T>>::contains_key(&collection_id, &who)||who == collection_details.owner, <Error<T>>::Unauthorized);
+
+			// Update item and cancel assignment
+			<Item<T>>::try_mutate(
+				&collection_id, 
+				&ntnft_id, 
+				| maybe_item_details | -> DispatchResult {
+					let item_details =
+						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
+					ensure!(
+						!item_details.is_accepted && 
+						item_details.is_assigned,   
+						<Error<T>>::ItemIsNotAssigned
+					);
+					item_details.is_accepted = false;
+					item_details.is_assigned = false;
+					<ProposedAssignment<T>>::remove(&collection_id, &who);
+					<CanceledAssignment<T>>::insert(&collection_id, &target_address, ntnft_id);
+					Ok(())
+				}
+			)?;
+
+			
+			Self::deposit_event(Event::CancelAssignment(who, collection_id, ntnft_id, target_address));
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
+		pub fn discard_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
+			// Ensure transaction is signed
+			let who = ensure_signed(origin)?;
+
+			// Check that the caller has the ntnft
+			ensure!(<Assignment<T>>::contains_key(&collection_id, &who), <Error<T>>::NoAssignmentForThisAccount);
+
+			// Update item to unassign ntnft from the caller
+			<Item<T>>::try_mutate(
+				&collection_id, 
+				&ntnft_id, 
+				| maybe_item_details | -> DispatchResult {
+					let item_details =
+						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
+					item_details.is_accepted = false;
+					item_details.is_assigned = false;
+					<Assignment<T>>::remove(&collection_id, &who);
+					Ok(())
+				}
+			)?;
+
+			// Deposit Event
+			Self::deposit_event(Event::DiscardNTNFT(collection_id, ntnft_id, who));
 			Ok(())
 		}
 	}

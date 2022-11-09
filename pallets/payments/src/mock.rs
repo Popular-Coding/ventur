@@ -1,7 +1,7 @@
 use crate as pallet_payments;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
+	traits::{ConstU16, ConstU64},
 };
 use frame_system as system;
 use sp_core::H256;
@@ -29,6 +29,7 @@ frame_support::construct_runtime!(
         Payments: pallet_payments::{Pallet, Call, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		EscrowModule: pallet_escrow::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -64,8 +65,12 @@ impl pallet_payments::Config for Test {
 	type PaymentId = u32;
 	type RFPReferenceId = u32;
 	type PaymentCurrency = Balances;
-	type MaxPaymentsScheduled = ConstU32<50>;
 	type TimeProvider = pallet_timestamp::Pallet<Test>;
+}
+
+impl pallet_escrow::Config for Test {
+	type Event = Event;
+	type EscrowCurrency = Balances;
 }
 
 pub fn test_externalities() -> sp_io::TestExternalities {

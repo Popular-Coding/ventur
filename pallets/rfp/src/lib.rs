@@ -59,7 +59,13 @@ mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use frame_support::{
+		pallet_prelude::*,
+		traits::{
+			Currency,
+			LockableCurrency
+		}
+	};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -69,8 +75,13 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type RFPId: Member + Parameter + MaxEncodedLen + Copy;
+		type RFPId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
+		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 	}
+
+	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<
+		<T as frame_system::Config>::AccountId,
+	>>::Balance;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -81,11 +92,29 @@ pub mod pallet {
 		/// Updates an RFP
 		/// [account, rfp]
 		UpdateRFP(T::AccountId, T::RFPId),
+		/// Cancels an RFP
+		/// [account, rfp]
+		CancelRFP(T::AccountId, T::RFPId),
+		/// Bids on an RFP
+		/// [account, rfp, amount]
+		BidOnRFP(T::AccountId, T::RFPId, BalanceOf<T>),
+		/// RFP Admin creates a shortlist of the bids on an RFP
+		/// [account, rfp]
+		ShortlistRFP(T::AccountId, T::RFPId),
+		/// Updates a bid on an RFP
+		/// [account, rfp]
+		UpdateRFPBid(T::AccountId, T::RFPId),
+		/// Accepts a bid on an RFP
+		/// [account, rfp]
+		AcceptRFPBid(T::AccountId, T::RFPId),
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-
+		/// Error names should be descriptive.
+		NoneValue,
+		/// Errors should have helpful documentation associated with them.
+		StorageOverflow,
 	}
 
 	#[pallet::call]

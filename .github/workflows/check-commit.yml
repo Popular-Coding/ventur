@@ -1,4 +1,4 @@
-name: Cargo Build Release and Lint Validation
+name: Cargo Check Commit
 
 # Controls when the action will run.
 on:
@@ -13,19 +13,7 @@ on:
       - '**.png'
       - '**/tests.rs'
       - '**/mock.rs'
-    branches: 
-      - main 
-  pull_request:
-    paths-ignore:
-      - '.github/**'
-      - '.vscode/**'
-      - 'docs/**'
-      - '.gitignore'
-      - '**.md'
-      - '**.png'
-      - '**/tests.rs'
-      - '**/mock.rs'
-    branches:
+    branches-ignore:
       - main 
 
   # Allows you to run this workflow manually from the Actions tab
@@ -33,7 +21,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  check-release-ubuntu:
+  check-commit-ubuntu:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -44,18 +32,13 @@ jobs:
           sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
 
       - name: Install and configure Rust
-        uses: ./.github/actions/install-rust 
+        uses: ./.github/actions/install-rust
 
-      - name: Cargo Clippy 
+      - name: Cargo Check
         run: |
-          cargo clippy
-          cargo clean
+          SKIP_WASM_BUILD=1 cargo check --release
 
-      - name: Cargo Build
-        run: |
-          cargo build --release
-
-  check-release-macos:
+  check-commit-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
@@ -68,11 +51,6 @@ jobs:
       - name: Install and configure Rust
         uses: ./.github/actions/install-rust 
 
-      - name: Cargo Clippy 
+      - name: Cargo Check
         run: |
-          cargo clippy
-          cargo clean
-
-      - name: Cargo Build
-        run: |
-          cargo build --release
+          SKIP_WASM_BUILD=1 cargo check --release

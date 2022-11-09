@@ -49,18 +49,22 @@ fn test_initialize_payment() {
             scheduled_payment_2
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
         };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert!(
             Payments::payment_agreements(
@@ -69,7 +73,7 @@ fn test_initialize_payment() {
         );
         let expected_event = 
             crate::Event::PaymentInitialized(
-                ESCROW_ACCOUNT_ID, 
+                PAYER_ID, 
                 PAYEE_ID, 
                 TOTAL_PAYMENT_AMOUNT
             );
@@ -83,13 +87,13 @@ fn test_claim_successful_payment() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &PAYER_ID, 
             TOTAL_PAYMENT_AMOUNT
         );
 
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
-                &ESCROW_ACCOUNT_ID
+                &PAYER_ID
             ), 
             TOTAL_PAYMENT_AMOUNT
         );
@@ -109,18 +113,22 @@ fn test_claim_successful_payment() {
             scheduled_payment_2.clone()
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
         };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert_ok!(
             Payments::claim(
@@ -146,7 +154,7 @@ fn test_claim_successful_payment() {
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
-                &ESCROW_ACCOUNT_ID
+                &PAYER_ID
             ), 
             TOTAL_PAYMENT_AMOUNT - (TOTAL_PAYMENT_AMOUNT / 2),
         );
@@ -166,7 +174,7 @@ fn test_claim_fails_before_payment_date() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &PAYER_ID, 
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -179,18 +187,22 @@ fn test_claim_fails_before_payment_date() {
             scheduled_payment.clone(), 
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
         };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert_noop!(
             Payments::claim(
@@ -211,7 +223,7 @@ fn test_claim_fails_before_payment_date() {
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
-                &ESCROW_ACCOUNT_ID
+                &PAYER_ID
             ), 
             TOTAL_PAYMENT_AMOUNT,
         );
@@ -230,7 +242,7 @@ fn test_block_and_unblock_payment() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &PAYER_ID, 
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -243,18 +255,22 @@ fn test_block_and_unblock_payment() {
             scheduled_payment.clone(), 
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
-            payment_source: pallet_payments::PaymentSource::EscrowAccount,
-            account_id: ESCROW_ACCOUNT_ID,
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: PAYER_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: PAYER_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
         };
         assert_ok!(Payments::initialize_payment(
             Origin::signed(PAYER_ID),
-            PAYEE_ID,
-            PAYMENT_ID,
-            RFP_REFERENCE_ID,
-            TOTAL_PAYMENT_AMOUNT.into(),
-            payment_schedule,
-            payment_method.clone(),
-            ADMINISTRATOR_ID,
+            payment_details
         ));
         assert_ok!(
             Payments::block_next_payment(
@@ -296,6 +312,56 @@ fn test_block_and_unblock_payment() {
                 PAYMENT_ID,
             )
         );
+        assert_ok!(
+            Payments::claim(
+                Origin::signed(PAYEE_ID),
+                PAYER_ID, 
+                PAYMENT_ID
+            )
+        );
+    });
+}
+
+#[test]
+fn test_integration_with_escrow() {
+    let mut t = test_externalities();
+    t.execute_with(|| {
+        assert!(System::events().is_empty());
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &ESCROW_ACCOUNT_ID, 
+            TOTAL_PAYMENT_AMOUNT
+        );
+        let time: u64 = <timestamp::Pallet<Test>>::now();
+        let scheduled_payment = pallet_payments::ScheduledPayment::<Test> {
+            payment_date: time,
+            amount_per_claim: TOTAL_PAYMENT_AMOUNT,
+            released: true,
+        };
+		assert_ok!(EscrowModule::create_escrow(Origin::signed(ESCROW_ACCOUNT_ID)));
+		assert_ok!(EscrowModule::add_admin(Origin::signed(ESCROW_ACCOUNT_ID), PAYER_ID, ESCROW_ACCOUNT_ID));
+		assert_ok!(EscrowModule::fund_escrow(Origin::signed(ESCROW_ACCOUNT_ID), ESCROW_ACCOUNT_ID, TOTAL_PAYMENT_AMOUNT));
+        let payment_schedule = bounded_vec![
+            scheduled_payment.clone(), 
+        ];
+        let payment_method = pallet_payments::PaymentMethod::<Test>{
+            payment_source: pallet_payments::PaymentSource::EscrowAccount,
+            account_id: ESCROW_ACCOUNT_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: ESCROW_ACCOUNT_ID,
+            payee: PAYEE_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: TOTAL_PAYMENT_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ADMINISTRATOR_ID,
+        };
+        assert_ok!(Payments::initialize_payment(
+            Origin::signed(PAYER_ID),
+            payment_details
+        ));
+        
         assert_ok!(
             Payments::claim(
                 Origin::signed(PAYEE_ID),

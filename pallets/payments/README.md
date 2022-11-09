@@ -1,7 +1,12 @@
-# Payment Pallet
+# Payment Pallet Testing Guide (Ubuntu)
+
+<div align="center">
 
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
 [![rustdoc](https://img.shields.io/badge/rustdoc-payment_pallet-informational)](https://docs.ventur.network/pallet_payments/index.html)
+[![Payments Unit Test](https://github.com/Popular-Coding/ventur/actions/workflows/test-payments.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test-payments.yml)
+
+</div>
 
 ## Payment Pallet Setup and Testing Guide (Ubuntu)
 
@@ -40,19 +45,19 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 
 #### Fetch the code
 
- The following command pulls the ventur-node code from our github repo:
+The following command pulls the ventur-node code from our github repo:
 
 ```bash
-git clone https://github.com/PopularCoding/ventur
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
- ```
+```
 
 #### Run the node
 
- The following command builds the node. (This may take some time):
+The following command builds the node. (This may take some time):
 
- ```bash
+```bash
 cargo run --release -- --dev
 ```
 
@@ -68,7 +73,7 @@ cargo test
 
 #### 1. Start the node
 
- ```bash
+```bash
 cargo run --release -- --dev
 ```
 
@@ -125,7 +130,7 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Claiming a Payment](docs/claim-payment.png)|
 
-##### Initialize Scheduled Payments
+#### Initialize Scheduled Payments
 
 1. Follow the same steps lined out in the Initialize One-Time Payment Section
 2. In Scheduled Payments, click on `Add Item`
@@ -136,7 +141,7 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Multiple Payments](docs/multiple-payments.png)|
 
-##### Claiming Unavailable Payments
+#### Claiming Unavailable Payments
 
 1. Follow the same steps lined out in the Claim a Payment Section
 2. Try to claim as many payments as you'd like
@@ -145,3 +150,43 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Claiming A Payment That Isn't Due Yet_ |
     |:--:|
     |![Payment Failure](docs/payment-failure.png)|
+
+#### Initialize a Payment from Escrow
+
+1. Create an escrow
+
+    | _Create an Escrow_ |
+    |:--:|
+    |![Create an escrow](docs/create-escrow.png)|
+
+2. Fund an Escrow
+Call the `fundEscrow` extrinsic with a balance of:
+`1000000000000000000`
+
+    | _Fund an Escrow_ |
+    |:--:|
+    |![Fund Escrow](docs/fund-escrow.png)|
+
+3. Check Account Balances
+
+    | _Note Account Balances_ |
+    |:--:|
+    |![Account Balances](docs/note-accounts.png)|
+
+4. Initialize a payment contract
+
+    | _Initializing a Payment From Escrow_ |
+    |:--:|
+    |![Initialize Payment Contract](docs/init-escrow-pay.png)|
+
+5. Claim a payment
+
+    | _Claiming A Payment From Escrow_ |
+    |:--:|
+    |![Claim payment from escrow](docs/claim-escrow-pay.png)|
+
+6. Confirm Expected Changes to Account Balances
+
+    | _Confirm Payment has Come from the Payer's Escrow_ |
+    |:--:|
+    |![Payment From Escrow](docs/balances-pay-from-escrow.png)|

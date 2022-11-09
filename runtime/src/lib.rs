@@ -277,7 +277,7 @@ impl pallet_sudo::Config for Runtime {
 /// Configure the escrow pallet in pallets/escrow.
 impl pallet_escrow::Config for Runtime {
 	type Event = Event;
-	type PaymentCurrency = Balances;
+	type EscrowCurrency = Balances;
 }
 
 // Configure the payments contract pallet in pallets/payments
@@ -286,7 +286,6 @@ impl pallet_payments::Config for Runtime {
 	type PaymentId = u32;
 	type RFPReferenceId = u32;
 	type PaymentCurrency = Balances;
-	type MaxPaymentsScheduled = ConstU32<50>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 } 
 
@@ -294,6 +293,7 @@ impl pallet_payments::Config for Runtime {
 impl pallet_rfp::Config for Runtime {
 	type Event = Event;
 	type RFPId = u128;
+	type Currency = Balances;
 
 } 
 

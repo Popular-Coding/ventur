@@ -1,0 +1,60 @@
+name: Check Docker Compose and Docker Build
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on pushes
+  push:
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '.gitignore'
+      - '**.md'
+      - '**.png'
+      - '**/tests.rs'
+      - '**/mock.rs'
+    branches: 
+      - main 
+  pull_request:
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - '.gitignore'
+      - '**.md'
+      - '**.png'
+      - '**/tests.rs'
+      - '**/mock.rs'
+    branches:
+      - main 
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  check-docker-compose:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup docker and docker-compose
+        uses: ./.github/actions/ubuntu/install-docker
+          
+      - name: Docker compose 
+        run: | 
+          docker-compose down --remove-orphans 
+          timeout 1h docker-compose run --rm --service-ports dev $@ || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 ]]; then exit $exitcode; else exit 0; fi
+
+  check-docker-build-run:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup docker and docker-compose
+        uses: ./.github/actions/ubuntu/install-docker
+
+      - name: Docker build and run 
+        run: | 
+          docker build . -t ventur-node
+          timeout --kill-after=5m 5m docker run -p 9944:9944 ventur-node || exitcode=$?; if [[ $exitcode -ne 124 && $exitcode -ne 0 && $exitcode -ne 137 ]]; then exit $exitcode; else exit 0; fi
