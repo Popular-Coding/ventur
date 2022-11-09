@@ -119,15 +119,14 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		// An extrinsic that transfers the next scheduled payment
-		// to the payee's account, if the payment is available
-		pub fn claim (
-		) -> DispatchResult {
-			Self::deposit_event(
-				Event::PartOfPaymentClaimed(payee, payment_amount)
-			);
+		 /// A dispatchable to create an RFP
+		 #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		 pub fn create_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
+			// Ensure transaction signed
+			let who = ensure_signed(origin)?;
+			// TODO: Create and Store RFP
+			Self::deposit_event(Event::CreateRFP(who, rfp_id));
 			Ok(())
-		}
+		 }
 	}
 }
