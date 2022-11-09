@@ -49,8 +49,13 @@
 //! - `accept_rfp_bid` -
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
 pub use pallet::*;
+
+#[cfg(test)]
+pub(crate) mod mock;
+
+#[cfg(test)]
+mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -85,6 +90,15 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// An extrinsic that transfers the next scheduled payment
+		// to the payee's account, if the payment is available
+		pub fn claim (
+		) -> DispatchResult {
+			Self::deposit_event(
+				Event::PartOfPaymentClaimed(payee, payment_amount)
+			);
+			Ok(())
+		}
 	}
 }
