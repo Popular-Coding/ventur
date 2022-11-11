@@ -69,10 +69,13 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-	pub struct CollectionDetails<AccountId> {
+	#[scale_info(skip_type_params(T))]
+	pub struct CollectionDetails<AccountId, T: Config> {
 		pub(super) owner: AccountId,
 		pub(super) amount: u32,
 		pub(super) is_frozen: bool,
+		pub(super) image_ipfs_cid: T::Hash,
+		pub(super) metadata_ipfs_cid: T::Hash,
 	}
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
@@ -97,7 +100,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn collection)]
-	pub(super) type Collection<T: Config> = StorageMap<_, Blake2_128Concat, T::CollectionId, CollectionDetails<T::AccountId>, OptionQuery>;
+	pub(super) type Collection<T: Config> = StorageMap<_, Blake2_128Concat, T::CollectionId, CollectionDetails<T::AccountId, T>, OptionQuery>;
 	
 	#[pallet::storage]
 	#[pallet::getter(fn assignment)]
@@ -183,7 +186,12 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
         /// A dispatchable to create an NT-NFT Collection
         #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
-		pub fn create_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
+		pub fn create_collection(
+			origin: OriginFor<T>, 
+			collection_id: T::CollectionId,
+			image_ipfs_cid: T::Hash,
+			metadata_ipfs_cid: T::Hash,
+		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			ensure!(!<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdAlreadyExists);
 			<Collection<T>>::insert(
@@ -192,6 +200,8 @@ pub mod pallet {
 					owner: who.clone(),
 					amount: 0,
 					is_frozen: false,
+					image_ipfs_cid: image_ipfs_cid,
+					metadata_ipfs_cid: metadata_ipfs_cid,
 				});
 
 			Self::deposit_event(Event::CreateCollection(collection_id, who));
