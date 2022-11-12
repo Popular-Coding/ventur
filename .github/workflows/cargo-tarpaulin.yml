@@ -39,6 +39,10 @@ jobs:
       - name: Install and configure Rust
         uses: ./.github/actions/install-rust 
 
+      - name: Install Cargo Tarpaulin
+        run: |
+          cargo install -f cargo-tarpaulin
+
       - name: Check Test Coverage
         run: |
-          SKIP_WASM_BUILD=1 cargo tarpaulin
+          SKIP_WASM_BUILD=1 cargo tarpaulin -v
