@@ -1,22 +1,28 @@
 use crate::{mock::*, Error, CollectionDetails};
 use frame_support::{assert_noop,  assert_ok};
-use sp_core::H256;
-use array_bytes;
+use hex_literal::hex;
 
 const ACCOUNT_ID: u64 = 1;
 const OTHER_ACCOUNT_ID: u64 = 2;
 const COLLECTION_ID: u128 = 101;
 const OTHER_COLLECTION_ID: u128 = 102;
 const NTNFT_ID: u128 = 1001;
-const IMAGE_CID: &str = "QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqB";
-const META_CID: &str = "QmPK1s3pNYLi9ERiq3BDxKa4XosgWwFRQUydHUtz4YgpqC";
 
-/ Test Create Collection Dispatchable
 #[test]
 fn create_collection_successfully_executes() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -29,23 +35,51 @@ fn create_collection_successfully_executes() {
 #[test]
 fn create_collection_fails_on_repeat_collection_id() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
 			image_cid,
 			meta_cid,
 		));
-		assert_noop!(NTNFTModule::create_collection(Origin::signed(ACCOUNT_ID), COLLECTION_ID), Error::<Test>::CollectionIdAlreadyExists);
+		assert_noop!(
+			NTNFTModule::create_collection(
+				Origin::signed(ACCOUNT_ID), 
+				COLLECTION_ID, 
+				image_cid,
+				meta_cid
+			), 
+			Error::<Test>::CollectionIdAlreadyExists
+		);
 	});
 }
 
 #[test]
 fn correct_storage_for_create_collection() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -64,12 +98,21 @@ fn correct_storage_for_create_collection() {
 	});
 }
 
-Test Freeze Collection
 #[test]
 fn freeze_collection_successfully_executes() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -83,8 +126,18 @@ fn freeze_collection_successfully_executes() {
 #[test]
 fn freeze_collection_fails_on_collectionid_does_not_exist() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -99,8 +152,18 @@ fn freeze_collection_fails_on_collectionid_does_not_exist() {
 fn freeze_collection_fails_on_unauthorized() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -115,8 +178,18 @@ fn freeze_collection_fails_on_unauthorized() {
 #[test]
 fn thaw_collection_successfully_executes() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -131,8 +204,18 @@ fn thaw_collection_successfully_executes() {
 #[test]
 fn thaw_collection_fails_on_collectionid_does_not_exist() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -147,8 +230,18 @@ fn thaw_collection_fails_on_collectionid_does_not_exist() {
 #[test]
 fn thaw_collection_fails_on_unauthorized() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -160,12 +253,21 @@ fn thaw_collection_fails_on_unauthorized() {
 	});
 }
 
-// Test Mint NTNFT
 #[test]
 fn mint_ntnft_successfully_executes() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -179,8 +281,18 @@ fn mint_ntnft_successfully_executes() {
 #[test]
 fn mint_ntnft_fails_on_collectionid_does_not_exist() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -194,8 +306,18 @@ fn mint_ntnft_fails_on_collectionid_does_not_exist() {
 #[test]
 fn mint_ntnft_fails_on_unauthorized() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -206,12 +328,21 @@ fn mint_ntnft_fails_on_unauthorized() {
 	});
 }
 
-// Test Burn NTNFT
 #[test]
 fn burn_ntnft_successfully_executes() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -226,8 +357,18 @@ fn burn_ntnft_successfully_executes() {
 #[test]
 fn burn_ntnft_fails_on_collectionid_does_not_exist() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -242,8 +383,18 @@ fn burn_ntnft_fails_on_collectionid_does_not_exist() {
 #[test]
 fn burn_ntnft_fails_on_unauthorized() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -255,12 +406,22 @@ fn burn_ntnft_fails_on_unauthorized() {
 	});
 }
 
-// Test Assign NTNFT
 #[test]
 fn assign_ntnft_successfully_executes() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -275,8 +436,18 @@ fn assign_ntnft_successfully_executes() {
 #[test]
 fn assign_ntnft_fails_on_collectionid_does_not_exist() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
@@ -291,8 +462,18 @@ fn assign_ntnft_fails_on_collectionid_does_not_exist() {
 #[test]
 fn assign_ntnft_fails_on_unauthorized() {
 	new_test_ext().execute_with(|| {
-		let image_cid = array_bytes::hex_n_into::<H256, 32>(IMAGE_CID).unwrap();
-		let meta_cid = array_bytes::hex_n_into::<H256, 32>(META_CID).unwrap();
+		let image_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
+		let meta_cid = 
+			sp_core::H256(
+				hex!(
+					"5198bfa9da6f9c9d22dd2b0ce301dde9fd3c5826a117705d3ffa415d83a6bde8"
+				)
+			);
 		assert_ok!(NTNFTModule::create_collection(
 			Origin::signed(ACCOUNT_ID), 
 			COLLECTION_ID,
