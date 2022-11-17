@@ -4013,6 +4013,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ntnft"
+version = "4.0.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.29)",
+]
+
+[[package]]
 name = "pallet-payments"
 version = "4.0.0-dev"
 dependencies = [
@@ -4040,6 +4058,23 @@ dependencies = [
  "parity-scale-codec",
  "safe-mix",
  "scale-info",
+ "sp-runtime",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.29)",
+]
+
+[[package]]
+name = "pallet-rfp"
+version = "4.0.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.29)",
 ]
@@ -7869,8 +7904,10 @@ dependencies = [
  "pallet-balances",
  "pallet-escrow",
  "pallet-grandpa",
+ "pallet-ntnft",
  "pallet-payments",
  "pallet-randomness-collective-flip",
+ "pallet-rfp",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",

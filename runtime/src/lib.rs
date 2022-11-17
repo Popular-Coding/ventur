@@ -49,6 +49,12 @@ pub use pallet_escrow;
 /// Import the payments pallet.
 pub use pallet_payments;
 
+/// Import the rfp pallet.
+pub use pallet_rfp;
+
+/// Import the NT-NFT pallet.
+pub use pallet_ntnft;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -283,6 +289,20 @@ impl pallet_payments::Config for Runtime {
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 } 
 
+// Configure the rfp pallet in pallets/rfp
+impl pallet_rfp::Config for Runtime {
+	type Event = Event;
+	type RFPId = u128;
+	type Currency = Balances;
+} 
+
+// Configure the NT-NFT pallet in pallets/nt-nft
+impl pallet_ntnft::Config for Runtime {
+	type Event = Event;
+	type CollectionId = u128;
+	type ItemId = u128;
+} 
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -302,6 +322,8 @@ construct_runtime!(
 		// Include the custom logic from the pallet-escrow and pallet-payments in the runtime.
 		Escrow: pallet_escrow,
 		Payments: pallet_payments,
+		RFP: pallet_rfp,
+		NTNFT: pallet_ntnft,
 	}
 );
 
@@ -348,6 +370,8 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_escrow, Escrow]
 		[pallet_payments, Payments]
+		[pallet_rfp, RFP]
+		[pallet_ntnft, NTNFT]
 	);
 }
 

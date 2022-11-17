@@ -49,6 +49,8 @@ hex-literal = { version = "0.3.4", optional = true }
 # Local Dependencies
 pallet-escrow = { version = "4.0.0-dev", default-features = false, path = "../pallets/escrow" }
 pallet-payments = { version = "4.0.0-dev", default-features = false, path = "../pallets/payments" }
+pallet-rfp = { version = "4.0.0-dev", default-features = false, path = "../pallets/rfp" }
+pallet-ntnft = { version = "4.0.0-dev", default-features = false, path = "../pallets/nt-nft" }
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
@@ -70,6 +72,8 @@ std = [
 	"pallet-sudo/std",
 	"pallet-escrow/std",
 	"pallet-payments/std",
+	"pallet-rfp/std",
+	"pallet-ntnft/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
@@ -109,6 +113,8 @@ try-runtime = [
 	"pallet-sudo/try-runtime",
 	"pallet-escrow/try-runtime",
 	"pallet-payments/try-runtime",
+	"pallet-rfp/try-runtime",
+	"pallet-ntnft/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 ]

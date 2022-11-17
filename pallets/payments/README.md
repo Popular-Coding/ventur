@@ -8,18 +8,20 @@
 
 </div>
 
-## Prerequisite Setup
+## Payment Pallet Setup and Testing Guide (Ubuntu)
 
-### Install Dependencies
+### Prerequisite Setup
 
-```
+#### Install Dependencies
+
+```bash
 sudo apt install build-essential
 sudo apt install -y git clang curl libssl-dev llvm libudev-dev
 ```
 
-### Install Rust
+#### Install Rust
 
-```
+```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 source ~/.cargo/env
@@ -39,39 +41,39 @@ rustup target add wasm32-unknown-unknown
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
 
-## Deploy a Local Ventur Node
+### Deploy a Local Ventur Node
 
-### Fetch the code
+#### Fetch the code
 
- The following command pulls the ventur-node code from our github repo:
+The following command pulls the ventur-node code from our github repo:
 
-```
-git clone [https://github.com/Popular-Coding/ventur.git](https://github.com/Popular-Coding/ventur.git)
+```bash
+git clone https://github.com/Popular-Coding/ventur.git
 
 cd ventur
- ```
+```
 
-### Run the node
+#### Run the node
 
- The following command builds the node. (This may take some time):
+The following command builds the node. (This may take some time):
 
- ```
+```bash
 cargo run --release -- --dev
 ```
 
-## Run Unit Tests
+### Run Unit Tests
 
 Unit tests can be run locally using the following command:
 
-```
+```bash
 cargo test
 ```
 
-## Manual Test Guide
+### Manual Test Guide
 
-### 1. Start the node
+#### 1. Start the node
 
- ```
+```bash
 cargo run --release -- --dev
 ```
 
@@ -79,7 +81,7 @@ cargo run --release -- --dev
 |:--:|
 |![Running the Node](docs/running-node.png)|
 
-### 2. Access the Node through the polkadot.js.org interface
+#### 2. Access the Node through the polkadot.js.org interface
 
 Once you have a ventur node running locally, follow this link:
 [https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer](https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer)
@@ -99,9 +101,9 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Setting your Custom Endpoint](docs/setting-custom-endpoint.png)|
 
-### 3. Test Out Functionality
+#### 3. Test Out Functionality
 
-#### Initialize A One-Time Payment
+##### Initialize A One-Time Payment
 
 1. Select `payments` in the dropdown under `submit the following extrinsic`
 2. Select the `initializePayment` extrinsic in the next dropdown
@@ -116,7 +118,7 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     |:--:|
     |![Initialization Success](docs/init-success.png)|
 
-#### Claim a Payment
+##### Claim a Payment
 
 1. Select `payments` in the dropdown under `submit the following extrinsic`
 2. Select the `claim` extrinsic in the next dropdown

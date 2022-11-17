@@ -3,6 +3,8 @@ members = [
     "node",
     "pallets/escrow",
     "pallets/payments",
+    "pallets/rfp",
+    "pallets/nt-nft",
     "runtime",
 ]
 [profile.release]
