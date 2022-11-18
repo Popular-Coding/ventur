@@ -135,6 +135,9 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Trying to create an RFP that already exists
+		/// under that id
+		RFPAlreadyExists
 	}
 
 	#[pallet::call]
@@ -144,11 +147,29 @@ pub mod pallet {
 		pub fn create_rfp(
 			origin: OriginFor<T>, 
 			rfp_id: T::RFPId,
-			_rfp_details: RFPDetails<T>
+			rfp_details: RFPDetails<T>
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: Create and Store RFP
-			Self::deposit_event(Event::CreateRFP(who, rfp_id));
+			let rfp_owner = ensure_signed(origin)?;
+			
+			// Assert rfp doesn't already exist
+			let rfp_exists = <RFPs<T>>::get(
+				&rfp_owner,
+				&rfp_id,
+			);
+
+			ensure!(
+				rfp_exists.is_none(),
+				Error::<T>::RFPAlreadyExists
+			);
+
+			// Insert the RFP details into storage
+			<RFPs<T>>::insert(
+				&rfp_owner, 
+				&rfp_id,
+				rfp_details
+			);
+
+			Self::deposit_event(Event::CreateRFP(rfp_owner, rfp_id));
 			Ok(())
 		}
 

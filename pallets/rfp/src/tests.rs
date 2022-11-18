@@ -1,6 +1,6 @@
 use crate::*;
 use frame_support::{
-    assert_ok,
+    assert_ok, assert_noop
 };
 use mock::*;
 
@@ -25,7 +25,7 @@ fn test_create_rfp() {
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
             RFP_ID,
-            rfp_details,
+            rfp_details.clone(),
         ));
         System::assert_last_event(
             mock::Event::RFPModule(
@@ -34,6 +34,37 @@ fn test_create_rfp() {
                     RFP_ID,
                 )
         ));
+        let stored_details = 
+            RFPModule::get_rfps(ACCOUNT_ID, RFP_ID).unwrap();
+        assert_eq!(stored_details, rfp_details);
+    })
+}
+
+#[test]
+fn test_re_create_rfp_fails() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {   
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        assert!(System::events().is_empty());
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        assert_noop!(
+            RFPModule::create_rfp(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID,
+                rfp_details.clone(),
+            ),
+            Error::<Test>::RFPAlreadyExists
+        );
     })
 }
 
