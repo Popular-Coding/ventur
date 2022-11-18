@@ -62,6 +62,7 @@ impl pallet_rfp::Config for Test {
 	type Event = Event;
 	type RFPId = u64;
 	type Currency = Balances;
+	type Cid = [u8; 59];
 }
 
 impl pallet_balances::Config for Test {

@@ -80,11 +80,32 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type RFPId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+		type Cid: MaxEncodedLen + TypeInfo + Decode + Encode + Clone + Eq + std::fmt::Debug;
+	}
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
+	#[scale_info(skip_type_params(T))]
+	pub struct RFPDetails<T: Config>{
+		pub(super) rfp_owner: T::AccountId,
+
+		pub(super) ipfs_hash: T::Cid,
 	}
 
 	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<
 		<T as frame_system::Config>::AccountId,
 	>>::Balance;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_rfps)]
+	pub type RFPs<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::AccountId, // rfp owner
+		Blake2_128Concat,
+		T::RFPId, // rfp_id
+		RFPDetails<T>,
+		OptionQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -120,7 +141,11 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// A dispatchable to create an RFP
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
-		pub fn create_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
+		pub fn create_rfp(
+			origin: OriginFor<T>, 
+			rfp_id: T::RFPId,
+			_rfp_details: RFPDetails<T>
+		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			// TODO: Create and Store RFP
 			Self::deposit_event(Event::CreateRFP(who, rfp_id));
