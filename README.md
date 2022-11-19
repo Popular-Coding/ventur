@@ -119,7 +119,6 @@ Clone the repo.
 git clone <https://github.com/Popular-Coding/ventur.git>
 
 cd ventur
-
 ```
 
 Then run this command to build the docker image.
@@ -152,15 +151,24 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 
 ## Runtime Architecture
 
-Pallets:
+### Pallets
 
-- Payment-Contracts
+#### Payment-Contracts
 
+[![README](https://img.shields.io/badge/README-payment_pallet-informational)](/pallets/payments/README.md)
 [![rustdoc](https://img.shields.io/badge/rustdoc-payment_pallet-informational)](https://docs.ventur.network/pallet_payment/index.html)
 
-- Escrow
+#### Escrow
 
+[![README](https://img.shields.io/badge/README-escrow_pallet-informational)](/pallets/escrow/README.md)
 [![rustdoc](https://img.shields.io/badge/rustdoc-escrow_pallet-informational)](https://docs.ventur.network/pallet_escrow/index.html)
 
-- NT-NFT (Targeted for Milestone 2)
-- RFP-Process (Targeted for Milestone 2)
+#### NT-NFT
+
+[![README](https://img.shields.io/badge/README-nt_nft_pallet-informational)](/pallets/nt-nft/README.md)
+[![rustdoc](https://img.shields.io/badge/rustdoc-nt_nft_pallet-informational)](https://docs.ventur.network/pallet_ntnft/index.html)
+
+#### RFP-Process
+
+[![README](https://img.shields.io/badge/README-rfp_pallet-informational)](/pallets/rfp/README.md)
+[![rustdoc](https://img.shields.io/badge/rustdoc-rfp_pallet-informational)](https://docs.ventur.network/pallet_rfp/index.html)
