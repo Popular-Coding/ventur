@@ -1,5 +1,10 @@
 # RFP Pallet
+
+<div align="center">
+
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![rustdoc](https://img.shields.io/badge/rustdoc-rfp_pallet-informational)](https://docs.ventur.network/pallet_rfp/index.html)
+</div>
 
 ## RFP Pallet Setup and Testing Guide (Ubuntu)
 

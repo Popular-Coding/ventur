@@ -1,6 +1,10 @@
 # NT-NFT Pallet
 
+<div align="center">
+
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![rustdoc](https://img.shields.io/badge/rustdoc-nt_nft_pallet-informational)](https://docs.ventur.network/pallet_ntnft/index.html)
+</div>
 
 ## NT-NFT Pallet Setup and Testing Guide (Ubuntu)
 
