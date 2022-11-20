@@ -67,9 +67,12 @@ pub mod pallet {
 		traits::{
 			Currency,
 			LockableCurrency
-		}
+		},
+		storage::bounded_vec::BoundedVec,
 	};
 	use frame_system::pallet_prelude::*;
+
+	pub const VEC_LIMIT: u32 = u32::MAX;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -81,6 +84,7 @@ pub mod pallet {
 		type RFPId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 		type Cid: MaxEncodedLen + TypeInfo + Decode + Encode + Clone + Eq + std::fmt::Debug;
+		type BidId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
@@ -89,6 +93,16 @@ pub mod pallet {
 		pub(super) rfp_owner: T::AccountId,
 
 		pub(super) ipfs_hash: T::Cid,
+	}
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
+	#[scale_info(skip_type_params(T))]
+	pub struct BidDetails<T: Config>{
+		pub(super) bid_owner: T::AccountId,
+
+		pub(super) ipfs_hash: T::Cid,
+
+		pub(super) bid_amount: BalanceOf<T>
 	}
 
 	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<
@@ -107,6 +121,28 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn all_bids)]
+	pub type AllBids<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::BidId, // bid_id
+		BidDetails<T>,
+		OptionQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn rfp_to_bids)]
+	pub type RFPToBids<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::RFPId, // bid_id
+		BoundedVec<
+				T::BidId, ConstU32<{VEC_LIMIT}>
+			>,
+		OptionQuery,
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -120,8 +156,8 @@ pub mod pallet {
 		/// [account, rfp]
 		CancelRFP(T::AccountId, T::RFPId),
 		/// Bids on an RFP
-		/// [account, rfp, amount]
-		BidOnRFP(T::AccountId, T::RFPId, BalanceOf<T>),
+		/// [account, rfp, bid_id]
+		BidOnRFP(T::AccountId, T::RFPId, T::BidId),
 		/// RFP Admin creates a shortlist of the bids on an RFP
 		/// [account, rfp]
 		ShortlistBid(T::AccountId, T::RFPId),
@@ -144,6 +180,15 @@ pub mod pallet {
 
 		/// Trying to cancel an RFP that doesn't exist
 		CancelingNonExistentRFP,
+
+		/// Trying to create a bid under an ID that already exists
+		BidAlreadyExists,
+
+		/// Reached maximum amount of bids
+		TooManyBids,
+
+		/// Did not find Bids for RFP
+		NoBidsForRFPFound
 	}
 
 	#[pallet::call]
@@ -233,11 +278,39 @@ pub mod pallet {
 		pub fn bid_on_rfp(
 			origin: OriginFor<T>, 
 			rfp_id: T::RFPId, 
-			amount: BalanceOf<T>
+			bid_id: T::BidId,
+			bid_details: BidDetails<T>
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: Bid on RFP
-			Self::deposit_event(Event::BidOnRFP(who, rfp_id, amount));
+			let bid_owner = ensure_signed(origin)?;
+			ensure!(
+				!<AllBids<T>>::contains_key(
+					&bid_id
+				),
+				<Error<T>>::BidAlreadyExists
+			);
+			<AllBids<T>>::insert(
+				&bid_id,
+				bid_details
+			);
+			<RFPToBids<T>>::try_mutate(
+				&rfp_id,
+				| maybe_bids_for_rfp | -> DispatchResult {
+					let bids_for_rfp = 
+						maybe_bids_for_rfp.as_mut()
+							.ok_or(
+								<Error<T>>::NoBidsForRFPFound
+							)?;
+					bids_for_rfp
+						.try_push(bid_id)
+						.ok()
+						.ok_or(
+							<Error<T>>::TooManyBids
+						)?;
+					Ok(())
+				}
+			)?;
+
+			Self::deposit_event(Event::BidOnRFP(bid_owner, rfp_id, bid_id));
 			Ok(())
 		}
 
