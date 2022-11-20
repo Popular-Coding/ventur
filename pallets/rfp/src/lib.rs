@@ -140,7 +140,10 @@ pub mod pallet {
 		RFPAlreadyExists,
 
 		/// Trying to update an RFP that hasn't been created yet
-		UpdatingNonExistentRFP
+		UpdatingNonExistentRFP,
+
+		/// Trying to cancel an RFP that doesn't exist
+		CancelingNonExistentRFP,
 	}
 
 	#[pallet::call]
@@ -211,9 +214,17 @@ pub mod pallet {
 		/// A dispatchable to cancel an existing RFP
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn cancel_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: Cancel Stored RFP
-			Self::deposit_event(Event::CancelRFP(who, rfp_id));
+			let rfp_owner = ensure_signed(origin)?;
+			ensure!(
+				<RFPs<T>>::contains_key(
+					&rfp_owner,
+					&rfp_id
+				),
+				<Error<T>>::CancelingNonExistentRFP
+			);
+
+			<RFPs<T>>::remove(&rfp_owner, &rfp_id);
+			Self::deposit_event(Event::CancelRFP(rfp_owner, rfp_id));
 			Ok(())
 		}
 

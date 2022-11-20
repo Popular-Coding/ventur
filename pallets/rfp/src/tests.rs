@@ -139,6 +139,17 @@ fn test_cancel_rfp() {
     t.execute_with(||
     {
         assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
         assert_ok!(RFPModule::cancel_rfp(
             Origin::signed(ACCOUNT_ID),
             RFP_ID
@@ -150,6 +161,22 @@ fn test_cancel_rfp() {
                     RFP_ID,
                 )
         ));
+    })
+}
+
+#[test]
+fn test_cancel_rfp_fails_if_not_existent() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        assert_noop!(
+            RFPModule::cancel_rfp(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID
+            ),
+            Error::<Test>::CancelingNonExistentRFP
+        );
     })
 }
 
