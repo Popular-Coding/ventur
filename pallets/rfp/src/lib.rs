@@ -137,7 +137,10 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Trying to create an RFP that already exists
 		/// under that id
-		RFPAlreadyExists
+		RFPAlreadyExists,
+
+		/// Trying to update an RFP that hasn't been created yet
+		UpdatingNonExistentRFP
 	}
 
 	#[pallet::call]
@@ -175,10 +178,33 @@ pub mod pallet {
 
 		/// A dispatchable to modify an existing RFP
 		 #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
-		pub fn update_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: Update Stored RFP
-			Self::deposit_event(Event::UpdateRFP(who, rfp_id));
+		pub fn update_rfp(
+			origin: OriginFor<T>, 
+			rfp_id: T::RFPId, 
+			new_rfp_details: RFPDetails<T>
+		) -> DispatchResult {
+			let rfp_owner = ensure_signed(origin)?;
+
+			// Update the stored value with the new details
+			<RFPs<T>>::try_mutate(
+				&rfp_owner,
+				&rfp_id,
+				| maybe_rfp_details | -> DispatchResult {
+					let rfp_details = 
+						maybe_rfp_details.as_mut()
+							.ok_or(
+								<Error<T>>::UpdatingNonExistentRFP
+							)?;
+					*rfp_details = new_rfp_details;
+					Ok(())
+				}
+			)?;
+			Self::deposit_event(
+				Event::UpdateRFP(
+					rfp_owner, 
+					rfp_id
+				)
+			);
 			Ok(())
 		}
 		

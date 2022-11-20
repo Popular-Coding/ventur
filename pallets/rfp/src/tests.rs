@@ -9,6 +9,7 @@ const RFP_ID: u64 = 1410;
 const BID_AMOUNT: u128 = 1999;
 const NEW_BID_AMOUNT: u128 = 1525;
 const RFP_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq";
+const OTHER_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptpg";
 
 #[test]
 fn test_create_rfp() {
@@ -69,14 +70,32 @@ fn test_re_create_rfp_fails() {
 }
 
 #[test]
-fn test_update_rfp() {
+fn test_update_rfp_succeeds() {
     let mut t = test_externalities();
     t.execute_with(||
     {
         assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        let new_cid: Vec<u8> = OTHER_CID.as_bytes().to_vec();
+        let new_ipfs_hash: [u8; 59] = new_cid.try_into().unwrap();
+        let new_rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash: new_ipfs_hash,
+        };
         assert_ok!(RFPModule::update_rfp(
             Origin::signed(ACCOUNT_ID),
-            RFP_ID
+            RFP_ID,
+            new_rfp_details.clone(),
         ));
         System::assert_last_event(
             mock::Event::RFPModule(
@@ -85,6 +104,32 @@ fn test_update_rfp() {
                     RFP_ID,
                 )
         ));
+        let stored_details = 
+            RFPModule::get_rfps(ACCOUNT_ID, RFP_ID).unwrap();
+        assert_eq!(stored_details, new_rfp_details);
+    })
+}
+
+#[test]
+fn test_update_rfp_fails_if_rfp_doesnt_exist() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_noop!(
+            RFPModule::update_rfp(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID, 
+                rfp_details
+            ), 
+            Error::<Test>::UpdatingNonExistentRFP
+        );
     })
 }
 
