@@ -69,11 +69,10 @@ pub mod pallet {
 			LockableCurrency
 		},
 		storage::bounded_vec::BoundedVec,
-		bounded_vec,
 	};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::bounded_vec;
 	use pallet_payments;
-	// use pallet_payments::Call::initialize_payment;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
