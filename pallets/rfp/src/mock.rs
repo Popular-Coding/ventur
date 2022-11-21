@@ -27,7 +27,7 @@ frame_support::construct_runtime!(
 	{
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         RFPModule: pallet_rfp::{Pallet, Call, Storage, Event<T>},
-        Payments: pallet_payments::{Pallet, Call, Storage, Event<T>},
+        PalletPayments: pallet_payments,
 		Balances: pallet_balances,
 		EscrowModule: pallet_escrow::{Pallet, Call, Storage, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
@@ -63,10 +63,10 @@ impl system::Config for Test {
 
 impl pallet_rfp::Config for Test {
 	type Event = Event;
-	type RFPId = u64;
+	type RFPId = u32;
 	type Currency = Balances;
 	type Cid = [u8; 59];
-	type BidId = u64;
+	type BidId = u32;
 }
 
 impl pallet_balances::Config for Test {
