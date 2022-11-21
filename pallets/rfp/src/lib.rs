@@ -138,7 +138,19 @@ pub mod pallet {
 	pub type RFPToBids<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		T::RFPId, // bid_id
+		T::RFPId, // rfP_id
+		BoundedVec<
+				T::BidId, ConstU32<{VEC_LIMIT}>
+			>,
+		OptionQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn rfp_to_shortlisted_bids)]
+	pub type RFPToShortlistedBids<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::RFPId, // rfp_id
 		BoundedVec<
 				T::BidId, ConstU32<{VEC_LIMIT}>
 			>,
@@ -161,10 +173,10 @@ pub mod pallet {
 		/// [account, rfp, bid_id]
 		BidOnRFP(T::AccountId, T::RFPId, T::BidId),
 		/// RFP Admin creates a shortlist of the bids on an RFP
-		/// [account, rfp]
-		ShortlistBid(T::AccountId, T::RFPId),
+		/// [account, rfp, bid_id]
+		ShortlistBid(T::AccountId, T::RFPId, T::BidId),
 		/// Updates a bid on an RFP
-		/// [account, rfp, amount]
+		/// [account, rfp, bid_id]
 		UpdateRFPBid(T::AccountId, T::RFPId, T::BidId),
 		/// Accepts a bid on an RFP
 		/// [account, rfp]
@@ -197,7 +209,19 @@ pub mod pallet {
 
 		/// Someone other than the bid owner attempted
 		/// to update the bid details
-		UnauthorizedUpdateOfBid
+		UnauthorizedUpdateOfBid,
+
+		/// General error for non existent RFP
+		NonExistentRFP,
+
+		/// Trying to shortlist a bid that doesn't exist
+		ShortlistingNonExistentBid,
+
+		/// Trying to shortlist for an RFP that has no bids
+		NoBidsForRFP,
+
+		/// Trying to shortlist a bid that was not made for this RFP
+		NoSuchBidForRFP
 	}
 
 	#[pallet::call]
@@ -337,10 +361,67 @@ pub mod pallet {
 		pub fn shortlist_bid(
 			origin: OriginFor<T>, 
 			rfp_id: T::RFPId, 
+			bid_id: T::BidId,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: Bid on RFP
-			Self::deposit_event(Event::ShortlistBid(who, rfp_id));
+			let rfp_owner = ensure_signed(origin)?;
+			let maybe_rfp_details = <RFPs<T>>::get(
+				&rfp_owner,
+				&rfp_id,
+			);
+			ensure!(maybe_rfp_details.is_some(),
+				Error::<T>::NonExistentRFP
+			);
+			let maybe_bid_details = <AllBids<T>>::get(
+				&bid_id
+			);
+			ensure!(maybe_bid_details.is_some(),
+				Error::<T>::ShortlistingNonExistentBid
+			);
+
+			let all_bids_for_rfp = <RFPToBids<T>>::get(
+				&rfp_id,
+			).ok_or(
+				Error::<T>::NoBidsForRFP
+			)?;
+			
+			ensure!(
+				all_bids_for_rfp.contains(&bid_id),
+				Error::<T>::NoSuchBidForRFP
+			);
+			let maybe_shortlisted_bids = <RFPToShortlistedBids<T>>::get(
+				&rfp_id,
+			);
+			if let Some(mut _shortlisted_bids) = maybe_shortlisted_bids {
+				<RFPToShortlistedBids<T>>::mutate(
+					&rfp_id,
+					| maybe_shortlisted_bids | -> DispatchResult {
+						let shortlisted_bids = maybe_shortlisted_bids.as_mut().unwrap();
+						shortlisted_bids.try_push(bid_id)
+							.ok()
+							.ok_or(
+								<Error<T>>::TooManyBids
+							)?;
+						Ok(())
+					}
+				)?;
+			} else {
+				let shortlisted_bids: BoundedVec<
+					T::BidId, ConstU32<{VEC_LIMIT}>
+				> = bounded_vec![bid_id];
+				<RFPToShortlistedBids<T>>::insert::<&T::RFPId, BoundedVec<
+					T::BidId, ConstU32<{VEC_LIMIT}>
+				>>(
+					&rfp_id,
+					shortlisted_bids.into()
+				);
+			}
+			Self::deposit_event(
+				Event::ShortlistBid(
+					rfp_owner,
+					rfp_id,
+					bid_id
+				)
+			);
 			Ok(())
 		}
 
