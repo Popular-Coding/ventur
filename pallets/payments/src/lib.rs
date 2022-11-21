@@ -89,7 +89,7 @@ pub mod pallet {
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	/// The struct that stores info about the payment agreement
 	/// between two parties
@@ -133,7 +133,7 @@ pub mod pallet {
 		pub(super) administrator_id: T::AccountId,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	/// An instance of a payment that is to be issued and claimed
 	pub struct ScheduledPayment<T: Config> {
@@ -148,7 +148,7 @@ pub mod pallet {
 		pub(super) released: bool,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo, Copy)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo, Copy, MaxEncodedLen)]
 	/// Whether the payment is coming from a personal or an
 	/// escrow account
 	pub enum PaymentSource {
@@ -157,7 +157,7 @@ pub mod pallet {
 		EscrowAccount,
 	}
 
-	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, Copy)]
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, Copy, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	pub struct PaymentMethod<T: Config> {
 		pub(super) payment_source: PaymentSource,
@@ -174,14 +174,14 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_escrow::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-		type PaymentId: Member + Parameter + From<u32> + Clone + Eq + Copy;
+		type PaymentId: Member + Parameter + From<u32> + Clone + Eq + Copy + MaxEncodedLen;
 		type RFPReferenceId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type PaymentCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber> + Clone + Eq;
 		type TimeProvider: UnixTime;
 	}
 
 	#[pallet::pallet]
-	#[pallet::without_storage_info]
+	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
 
