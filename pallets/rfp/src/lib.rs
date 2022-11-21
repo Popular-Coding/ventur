@@ -69,6 +69,7 @@ pub mod pallet {
 			LockableCurrency
 		},
 		storage::bounded_vec::BoundedVec,
+		bounded_vec,
 	};
 	use frame_system::pallet_prelude::*;
 
@@ -98,6 +99,7 @@ pub mod pallet {
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	pub struct BidDetails<T: Config>{
+		// TODO: Add feature of having multiple admins
 		pub(super) bid_owner: T::AccountId,
 
 		pub(super) ipfs_hash: T::Cid,
@@ -163,7 +165,7 @@ pub mod pallet {
 		ShortlistBid(T::AccountId, T::RFPId),
 		/// Updates a bid on an RFP
 		/// [account, rfp, amount]
-		UpdateRFPBid(T::AccountId, T::RFPId, BalanceOf<T>),
+		UpdateRFPBid(T::AccountId, T::RFPId, T::BidId),
 		/// Accepts a bid on an RFP
 		/// [account, rfp]
 		AcceptRFPBid(T::AccountId, T::RFPId),
@@ -188,7 +190,14 @@ pub mod pallet {
 		TooManyBids,
 
 		/// Did not find Bids for RFP
-		NoBidsForRFPFound
+		NoBidsForRFPFound,
+
+		/// Trying to update a non-existent bid
+		UpdatingNonExistentBid,
+
+		/// Someone other than the bid owner attempted
+		/// to update the bid details
+		UnauthorizedUpdateOfBid
 	}
 
 	#[pallet::call]
@@ -219,7 +228,15 @@ pub mod pallet {
 				&rfp_id,
 				rfp_details
 			);
-
+			let rfps_to_bids: BoundedVec<
+				T::BidId, ConstU32<{VEC_LIMIT}>
+			> = bounded_vec![];
+			<RFPToBids<T>>::insert::<&T::RFPId, BoundedVec<
+				T::BidId, ConstU32<{VEC_LIMIT}>
+			>>(
+				&rfp_id,
+				rfps_to_bids.into()
+			);
 			Self::deposit_event(Event::CreateRFP(rfp_owner, rfp_id));
 			Ok(())
 		}
@@ -269,6 +286,7 @@ pub mod pallet {
 			);
 
 			<RFPs<T>>::remove(&rfp_owner, &rfp_id);
+			// TODO: Delete bids associated with this RFP as well
 			Self::deposit_event(Event::CancelRFP(rfp_owner, rfp_id));
 			Ok(())
 		}
@@ -331,11 +349,33 @@ pub mod pallet {
 		pub fn update_rfp_bid(
 			origin: OriginFor<T>, 
 			rfp_id: T::RFPId, 
-			updated_amount: BalanceOf<T>
+			bid_id: T::BidId,
+			updated_bid_details: BidDetails<T>
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: update bid
-			Self::deposit_event(Event::UpdateRFPBid(who, rfp_id, updated_amount));
+			let updater_id = ensure_signed(origin)?;
+			<AllBids<T>>::try_mutate(
+				&bid_id,
+				| maybe_bid_details | -> DispatchResult {
+					let bid_details = 
+						maybe_bid_details.as_mut()
+							.ok_or(
+								<Error<T>>::UpdatingNonExistentBid
+							)?;
+					ensure!(
+						updater_id == bid_details.bid_owner,
+						<Error<T>>::UnauthorizedUpdateOfBid,
+					);
+					*bid_details = updated_bid_details;
+					Ok(())
+				}
+			)?;
+			Self::deposit_event(
+				Event::UpdateRFPBid(
+					updater_id, 
+					rfp_id, 
+					bid_id
+				)
+			);
 			Ok(())
 		}
 
