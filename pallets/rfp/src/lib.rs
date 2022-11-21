@@ -73,6 +73,7 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 	use pallet_payments;
+	// use pallet_payments::Call::initialize_payment;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
@@ -246,7 +247,10 @@ pub mod pallet {
 		RFPHasNoShortlist,
 
 		/// Accepting a bid for an RFP that has already had a bid accepted
-		BidAlreadyAccepted
+		BidAlreadyAccepted,
+
+		/// Bid was accepted, but there was an error with the payment initialization
+		PaymentInitializationFailed,
 	}
 
 	#[pallet::call]
@@ -491,8 +495,9 @@ pub mod pallet {
 			origin: OriginFor<T>, 
 			rfp_id: T::RFPId, 
 			bid_id: T::BidId,
+			payment_details: pallet_payments::PaymentDetails::<T>
 		) -> DispatchResult {
-			let rfp_owner = ensure_signed(origin)?;
+			let rfp_owner = ensure_signed(origin.clone())?;
 			ensure!(
 				<RFPs<T>>::contains_key(
 					&rfp_owner,
@@ -522,6 +527,11 @@ pub mod pallet {
 				&rfp_id,
 				&bid_id,
 			);
+
+			<pallet_payments::Pallet<T>>::initialize_payment(
+				origin,
+				payment_details
+			).ok().ok_or(Error::<T>::PaymentInitializationFailed)?;
 
 			Self::deposit_event(
 				Event::AcceptRFPBid(

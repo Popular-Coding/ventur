@@ -99,38 +99,38 @@ pub mod pallet {
 		/// Note: If, for example, the payment is coming from
 		/// an escrow account, this won't be the account from
 		/// which the payment is coming
-		pub(super) payer: T::AccountId,
+		pub payer: T::AccountId,
 
 		/// Which account the funds will be transferred to
-		pub(super) payee: T::AccountId,
+		pub payee: T::AccountId,
 
 		/// The UID for payments, used for identifying this 
 		/// payment agreement
-		pub(super) payment_id: T::PaymentId,
+		pub payment_id: T::PaymentId,
 
 		/// The id of the RFP associated with this payment
 		/// agreement
-		pub(super) rfp_reference_id: T::RFPReferenceId,
+		pub rfp_reference_id: T::RFPReferenceId,
 
 		/// The total payment amount that will be paid
 		/// out to the payee
-		pub(super) total_payment_amount: BalanceOf<T>,
+		pub total_payment_amount: BalanceOf<T>,
 
 		/// This bounded vec allows payments to be paid 
 		/// out in installments
-		pub(super) payment_schedule: 
+		pub payment_schedule: 
 			BoundedVec<
 				ScheduledPayment<T>, ConstU32<{VEC_LIMIT}>
 			>,
 
 		/// A struct describing where the payment will 
 		/// be coming from 
-		pub(super) payment_method: PaymentMethod<T>,
+		pub payment_method: PaymentMethod<T>,
 
 		/// The id of the admin of this payment agreement
 		/// Admins will have special privileges w.r.t.
 		/// modifying payments
-		pub(super) administrator_id: T::AccountId,
+		pub administrator_id: T::AccountId,
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
@@ -138,14 +138,14 @@ pub mod pallet {
 	/// An instance of a payment that is to be issued and claimed
 	pub struct ScheduledPayment<T: Config> {
 		/// When the payment will be eligible for claiming
-		pub(super) payment_date: u64,
+		pub payment_date: u64,
 
 		/// How much of the total amount can be claimed with
 		/// this instance of payment
-		pub(super) amount_per_claim: BalanceOf<T>,
+		pub amount_per_claim: BalanceOf<T>,
 
 		/// If false, this instance is not eligible for claim
-		pub(super) released: bool,
+		pub released: bool,
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo, Copy, MaxEncodedLen)]
@@ -160,10 +160,10 @@ pub mod pallet {
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, Copy, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	pub struct PaymentMethod<T: Config> {
-		pub(super) payment_source: PaymentSource,
+		pub payment_source: PaymentSource,
 
 		/// The account from which the transfer is to be drawn
-		pub(super) account_id: T::AccountId,
+		pub account_id: T::AccountId,
 	}
 
 	pub type BalanceOf<T> = <<T as Config>::PaymentCurrency as Currency<

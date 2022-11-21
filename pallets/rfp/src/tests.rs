@@ -1,17 +1,19 @@
 use crate::*;
 use frame_support::{
-    assert_ok, assert_noop
+    assert_ok, assert_noop, bounded_vec
 };
 use mock::*;
 
 const ACCOUNT_ID: u64 = 24601;
 const BIDDER_ID: u64 = 22222;
-const RFP_ID: u64 = 1410;
-const OTHER_RFP_ID: u64 = 999;
-const BID_ID: u64 = 1111;
-const OTHER_BID_ID: u64 = 12345;
+const RFP_ID: u32 = 1410;
+const OTHER_RFP_ID: u32 = 999;
+const BID_ID: u32 = 1111;
+const OTHER_BID_ID: u32 = 12345;
 const BID_AMOUNT: u128 = 1999;
 const NEW_BID_AMOUNT: u128 = 1525;
+const PAYMENT_ID: u32 = 0001;
+const RFP_REFERENCE_ID: u32 = 1410;
 const RFP_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq";
 const OTHER_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptpg";
 const BID_CID: &str = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkpabc";
@@ -699,11 +701,27 @@ fn test_accept_rfp_bid_fails_if_no_rfp() {
     t.execute_with(||
     {
         assert!(System::events().is_empty());
+        let payment_schedule = bounded_vec![];
+        let payment_method = pallet_payments::PaymentMethod::<Test>{
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: ACCOUNT_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: ACCOUNT_ID,
+            payee: BIDDER_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: BID_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ACCOUNT_ID,
+        };
         assert_noop!(
             RFPModule::accept_rfp_bid(
                 Origin::signed(ACCOUNT_ID),
                 RFP_ID,
-                BID_ID
+                BID_ID,
+                payment_details
             ),
             Error::<Test>::NonExistentRFP
         );
@@ -745,11 +763,27 @@ fn test_accept_rfp_bid_fails_if_bid_not_shortlisted() {
             RFP_ID,
             BID_ID
         ));
+        let payment_schedule = bounded_vec![];
+        let payment_method = pallet_payments::PaymentMethod::<Test>{
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: ACCOUNT_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: ACCOUNT_ID,
+            payee: BIDDER_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: BID_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ACCOUNT_ID,
+        };
         assert_noop!(
             RFPModule::accept_rfp_bid(
                 Origin::signed(ACCOUNT_ID),
                 RFP_ID,
-                OTHER_BID_ID
+                OTHER_BID_ID,
+                payment_details.clone()
             ),
             Error::<Test>::AcceptedBidNotShortlisted
         );
@@ -786,11 +820,27 @@ fn test_accept_rfp_bid_fails_if_no_shortlist() {
             BID_ID,
             bid_details.clone()
         ));
+        let payment_schedule = bounded_vec![];
+        let payment_method = pallet_payments::PaymentMethod::<Test>{
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: ACCOUNT_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: ACCOUNT_ID,
+            payee: BIDDER_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: BID_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ACCOUNT_ID,
+        };
         assert_noop!(
             RFPModule::accept_rfp_bid(
                 Origin::signed(ACCOUNT_ID),
                 RFP_ID,
-                OTHER_BID_ID
+                OTHER_BID_ID,
+                payment_details.clone()
             ),
             Error::<Test>::RFPHasNoShortlist
         );
@@ -832,10 +882,26 @@ fn test_accept_rfp_bid() {
             RFP_ID,
             BID_ID
         ));
+        let payment_schedule = bounded_vec![];
+        let payment_method = pallet_payments::PaymentMethod::<Test>{
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: ACCOUNT_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: ACCOUNT_ID,
+            payee: BIDDER_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: BID_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ACCOUNT_ID,
+        };
         assert_ok!(RFPModule::accept_rfp_bid(
             Origin::signed(ACCOUNT_ID),
             RFP_ID,
-            BID_ID
+            BID_ID, 
+            payment_details
         ));
         System::assert_last_event(
             mock::Event::RFPModule(
@@ -845,6 +911,11 @@ fn test_accept_rfp_bid() {
                     BID_ID
                 )
         ));
+        assert!(
+            PalletPayments::payment_agreements(
+                (ACCOUNT_ID, BIDDER_ID, PAYMENT_ID)
+            ).is_some()
+        );
         let accepted_bid = 
             RFPModule::rfp_to_accepted_bid(RFP_ID).unwrap();
         assert_eq!(accepted_bid, BID_ID);
@@ -886,16 +957,33 @@ fn test_accept_rfp_bid_again_fails() {
             RFP_ID,
             BID_ID
         ));
+        let payment_schedule = bounded_vec![];
+        let payment_method = pallet_payments::PaymentMethod::<Test> {
+            payment_source: pallet_payments::PaymentSource::PersonalAccount,
+            account_id: ACCOUNT_ID,
+        };
+        let payment_details = pallet_payments::PaymentDetails::<Test> {
+            payer: ACCOUNT_ID,
+            payee: BIDDER_ID,
+            payment_id: PAYMENT_ID,
+            rfp_reference_id: RFP_REFERENCE_ID,
+            total_payment_amount: BID_AMOUNT.into(),
+            payment_schedule,
+            payment_method: payment_method.clone(),
+            administrator_id: ACCOUNT_ID,
+        };
         assert_ok!(RFPModule::accept_rfp_bid(
             Origin::signed(ACCOUNT_ID),
             RFP_ID,
-            BID_ID
+            BID_ID,
+            payment_details.clone()
         ));
         assert_noop!(
             RFPModule::accept_rfp_bid(
                 Origin::signed(ACCOUNT_ID),
                 RFP_ID,
-                BID_ID
+                BID_ID, 
+                payment_details.clone()
             ),
             Error::<Test>::BidAlreadyAccepted
         );
