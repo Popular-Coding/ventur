@@ -27,7 +27,10 @@ frame_support::construct_runtime!(
 	{
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         RFPModule: pallet_rfp::{Pallet, Call, Storage, Event<T>},
+        Payments: pallet_payments::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances,
+		EscrowModule: pallet_escrow::{Pallet, Call, Storage, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 	}
 );
 
@@ -75,6 +78,27 @@ impl pallet_balances::Config for Test {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
+	type WeightInfo = ();
+}
+
+impl pallet_payments::Config for Test {
+	type Event = Event;
+	type PaymentId = u32;
+	type RFPReferenceId = u32;
+	type PaymentCurrency = Balances;
+	type TimeProvider = pallet_timestamp::Pallet<Test>;
+}
+
+impl pallet_escrow::Config for Test {
+	type Event = Event;
+	type EscrowCurrency = Balances;
+}
+
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
 }
 

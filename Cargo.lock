@@ -4101,6 +4101,8 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-escrow",
+ "pallet-payments",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",

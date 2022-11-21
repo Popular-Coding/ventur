@@ -72,6 +72,7 @@ pub mod pallet {
 		bounded_vec,
 	};
 	use frame_system::pallet_prelude::*;
+	use pallet_payments;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
@@ -80,7 +81,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + pallet_payments::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type RFPId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
