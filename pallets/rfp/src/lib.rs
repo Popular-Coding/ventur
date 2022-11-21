@@ -94,6 +94,8 @@ pub mod pallet {
 		pub(super) rfp_owner: T::AccountId,
 
 		pub(super) ipfs_hash: T::Cid,
+
+		// TODO: add bid / status field to this struct
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
@@ -105,6 +107,9 @@ pub mod pallet {
 		pub(super) ipfs_hash: T::Cid,
 
 		pub(super) bid_amount: BalanceOf<T>
+
+		// TODO: Add status (bid, shortlisted, accepted)
+		// TODO: Add rfpid associated with this bid
 	}
 
 	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<
@@ -157,6 +162,16 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn rfp_to_accepted_bid)]
+	pub type RFPToAcceptedBid<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::RFPId, // rfp_id
+		T::BidId, // bid_id
+		OptionQuery,
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -179,8 +194,8 @@ pub mod pallet {
 		/// [account, rfp, bid_id]
 		UpdateRFPBid(T::AccountId, T::RFPId, T::BidId),
 		/// Accepts a bid on an RFP
-		/// [account, rfp]
-		AcceptRFPBid(T::AccountId, T::RFPId),
+		/// [account, rfp, bid_id]
+		AcceptRFPBid(T::AccountId, T::RFPId, T::BidId),
 	}
 
 	#[pallet::error]
@@ -221,7 +236,16 @@ pub mod pallet {
 		NoBidsForRFP,
 
 		/// Trying to shortlist a bid that was not made for this RFP
-		NoSuchBidForRFP
+		NoSuchBidForRFP,
+
+		/// Trying to accept a bid that was not in the shortlist
+		AcceptedBidNotShortlisted,
+
+		/// Error if the RFP has no shortlist
+		RFPHasNoShortlist,
+
+		/// Accepting a bid for an RFP that has already had a bid accepted
+		BidAlreadyAccepted
 	}
 
 	#[pallet::call]
@@ -465,10 +489,46 @@ pub mod pallet {
 		pub fn accept_rfp_bid(
 			origin: OriginFor<T>, 
 			rfp_id: T::RFPId, 
+			bid_id: T::BidId,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			// TODO: accept bid
-			Self::deposit_event(Event::AcceptRFPBid(who, rfp_id));
+			let rfp_owner = ensure_signed(origin)?;
+			ensure!(
+				<RFPs<T>>::contains_key(
+					&rfp_owner,
+					&rfp_id
+				),
+				Error::<T>::NonExistentRFP
+			);
+
+			let shortlisted_bids = <RFPToShortlistedBids<T>>::get(
+				&rfp_id
+			);
+			ensure!(
+				shortlisted_bids.is_some(),
+				Error::<T>::RFPHasNoShortlist
+			);
+			ensure!(
+				shortlisted_bids.unwrap().contains(&bid_id),
+				Error::<T>::AcceptedBidNotShortlisted
+			);
+
+			ensure!(
+				<RFPToAcceptedBid<T>>::get(&rfp_id).is_none(),
+				Error::<T>::BidAlreadyAccepted
+			);
+
+			<RFPToAcceptedBid<T>>::insert(
+				&rfp_id,
+				&bid_id,
+			);
+
+			Self::deposit_event(
+				Event::AcceptRFPBid(
+					rfp_owner, 
+					rfp_id,
+					bid_id,
+				)
+			);
 			Ok(())
 		}
 	}

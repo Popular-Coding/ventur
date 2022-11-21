@@ -384,7 +384,6 @@ fn test_shortlist_multiple_bids() {
         ));
         let shortlisted_bids = 
             RFPModule::rfp_to_shortlisted_bids(RFP_ID).unwrap();
-        print!("{:?}", shortlisted_bids);
         assert!(shortlisted_bids.contains(&BID_ID));
         assert!(shortlisted_bids.contains(&OTHER_BID_ID));
     })
@@ -695,21 +694,210 @@ fn test_update_fails_if_bid_doesnt_exist() {
 }
 
 #[test]
+fn test_accept_rfp_bid_fails_if_no_rfp() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        assert_noop!(
+            RFPModule::accept_rfp_bid(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID,
+                BID_ID
+            ),
+            Error::<Test>::NonExistentRFP
+        );
+    })
+}
+
+#[test]
+fn test_accept_rfp_bid_fails_if_bid_not_shortlisted() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        let bid_cid: Vec<u8> = BID_CID.as_bytes().to_vec();
+        let bid_cid_hash: [u8; 59] = bid_cid.clone().try_into().unwrap();
+        let bid_details = BidDetails::<Test> {
+            bid_owner: BIDDER_ID,
+            ipfs_hash: bid_cid_hash,
+            bid_amount: BID_AMOUNT,
+        };
+        assert_ok!(RFPModule::bid_on_rfp(
+            Origin::signed(BIDDER_ID),
+            RFP_ID,
+            BID_ID,
+            bid_details.clone()
+        ));
+        assert_ok!(RFPModule::shortlist_bid(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            BID_ID
+        ));
+        assert_noop!(
+            RFPModule::accept_rfp_bid(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID,
+                OTHER_BID_ID
+            ),
+            Error::<Test>::AcceptedBidNotShortlisted
+        );
+    })
+}
+
+#[test]
+fn test_accept_rfp_bid_fails_if_no_shortlist() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        let bid_cid: Vec<u8> = BID_CID.as_bytes().to_vec();
+        let bid_cid_hash: [u8; 59] = bid_cid.clone().try_into().unwrap();
+        let bid_details = BidDetails::<Test> {
+            bid_owner: BIDDER_ID,
+            ipfs_hash: bid_cid_hash,
+            bid_amount: BID_AMOUNT,
+        };
+        assert_ok!(RFPModule::bid_on_rfp(
+            Origin::signed(BIDDER_ID),
+            RFP_ID,
+            BID_ID,
+            bid_details.clone()
+        ));
+        assert_noop!(
+            RFPModule::accept_rfp_bid(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID,
+                OTHER_BID_ID
+            ),
+            Error::<Test>::RFPHasNoShortlist
+        );
+    })
+}
+
+#[test]
 fn test_accept_rfp_bid() {
     let mut t = test_externalities();
     t.execute_with(||
     {
         assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        let bid_cid: Vec<u8> = BID_CID.as_bytes().to_vec();
+        let bid_cid_hash: [u8; 59] = bid_cid.clone().try_into().unwrap();
+        let bid_details = BidDetails::<Test> {
+            bid_owner: BIDDER_ID,
+            ipfs_hash: bid_cid_hash,
+            bid_amount: BID_AMOUNT,
+        };
+        assert_ok!(RFPModule::bid_on_rfp(
+            Origin::signed(BIDDER_ID),
+            RFP_ID,
+            BID_ID,
+            bid_details.clone()
+        ));
+        assert_ok!(RFPModule::shortlist_bid(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            BID_ID
+        ));
         assert_ok!(RFPModule::accept_rfp_bid(
             Origin::signed(ACCOUNT_ID),
             RFP_ID,
+            BID_ID
         ));
         System::assert_last_event(
             mock::Event::RFPModule(
                 crate::Event::AcceptRFPBid(
                     ACCOUNT_ID, 
                     RFP_ID,
+                    BID_ID
                 )
         ));
+        let accepted_bid = 
+            RFPModule::rfp_to_accepted_bid(RFP_ID).unwrap();
+        assert_eq!(accepted_bid, BID_ID);
+    })
+}
+
+#[test]
+fn test_accept_rfp_bid_again_fails() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        let bid_cid: Vec<u8> = BID_CID.as_bytes().to_vec();
+        let bid_cid_hash: [u8; 59] = bid_cid.clone().try_into().unwrap();
+        let bid_details = BidDetails::<Test> {
+            bid_owner: BIDDER_ID,
+            ipfs_hash: bid_cid_hash,
+            bid_amount: BID_AMOUNT,
+        };
+        assert_ok!(RFPModule::bid_on_rfp(
+            Origin::signed(BIDDER_ID),
+            RFP_ID,
+            BID_ID,
+            bid_details.clone()
+        ));
+        assert_ok!(RFPModule::shortlist_bid(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            BID_ID
+        ));
+        assert_ok!(RFPModule::accept_rfp_bid(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            BID_ID
+        ));
+        assert_noop!(
+            RFPModule::accept_rfp_bid(
+                Origin::signed(ACCOUNT_ID),
+                RFP_ID,
+                BID_ID
+            ),
+            Error::<Test>::BidAlreadyAccepted
+        );
     })
 }
