@@ -71,7 +71,6 @@ pub mod pallet {
 		storage::bounded_vec::BoundedVec,
 	};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::bounded_vec;
 	use pallet_payments;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
@@ -85,7 +84,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type RFPId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-		type Cid: MaxEncodedLen + TypeInfo + Decode + Encode + Clone + Eq + std::fmt::Debug;
+		type Cid: MaxEncodedLen + TypeInfo + Decode + Encode + Clone + Eq + sp_std::fmt::Debug;
 		type BidId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 	}
 
@@ -282,7 +281,9 @@ pub mod pallet {
 			);
 			let rfps_to_bids: BoundedVec<
 				T::BidId, ConstU32<{VEC_LIMIT}>
-			> = bounded_vec![];
+			> = BoundedVec::<
+					T::BidId, ConstU32<{VEC_LIMIT}>
+				>::default();
 			<RFPToBids<T>>::insert::<&T::RFPId, BoundedVec<
 				T::BidId, ConstU32<{VEC_LIMIT}>
 			>>(
@@ -433,9 +434,14 @@ pub mod pallet {
 					}
 				)?;
 			} else {
-				let shortlisted_bids: BoundedVec<
+				let mut shortlisted_bids = BoundedVec::<
 					T::BidId, ConstU32<{VEC_LIMIT}>
-				> = bounded_vec![bid_id];
+				>::default();
+				shortlisted_bids.try_push(bid_id)
+					.ok()
+					.ok_or(
+						<Error<T>>::TooManyBids
+					)?;
 				<RFPToShortlistedBids<T>>::insert::<&T::RFPId, BoundedVec<
 					T::BidId, ConstU32<{VEC_LIMIT}>
 				>>(
