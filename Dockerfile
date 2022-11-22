@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Changes: Specified ventur node build folders
+# Changes: Created temp image for build, Specified ventur node build folders, Copied binaries to ubuntu image
 
-FROM rust 
-EXPOSE 9944
+FROM rust as temp
 
 # Build dependencies
 RUN apt update && apt install -y git clang curl libssl-dev llvm libudev-dev pkg-config make cmake libprotobuf-dev protobuf-compiler
@@ -34,7 +33,7 @@ RUN set -eux && \
 	rustup target add wasm32-unknown-unknown --toolchain nightly && \
 	# install cargo tools
 	cargo install cargo-web wasm-pack cargo-deny cargo-nextest && \
-  cargo install --locked cargo-spellcheck && \
+  	cargo install --locked cargo-spellcheck && \
 	cargo install --version 0.4.2 diener && \
 	# wasm-bindgen-cli version should match the one pinned in substrate
 	cargo install --version 0.2.73 wasm-bindgen-cli && \
@@ -50,10 +49,14 @@ RUN set -eux && \
 	# cargo clean up
 	rm -rf "${CARGO_HOME}/registry" "${CARGO_HOME}/git" /root/.cache/sccache
 
-# Ventur node
-WORKDIR /var/www/ventur-node
-COPY . /var/www/ventur-node/
-RUN cargo build --release 
-ENTRYPOINT ./target/release/ventur-node --dev --ws-external
+# Compile binaries for ventur node 
+WORKDIR /ventur-node
+COPY . /ventur-node
+RUN cargo build --release --locked 
 
+# Ventur Node Image
+FROM ubuntu:20.04
+COPY --from=temp /ventur-node/target/release/ventur-node /usr/local/bin
+EXPOSE 9944
+ENTRYPOINT /usr/local/bin/ventur-node --dev --ws-external
 STOPSIGNAL SIGTERM
