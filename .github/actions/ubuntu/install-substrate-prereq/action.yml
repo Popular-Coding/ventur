@@ -1,0 +1,9 @@
+name: "Install Substrate Pre-req on Ubuntu"
+runs: 
+  using: "composite"
+  steps: 
+    - run: |
+        sudo apt update
+        sudo apt install -y build-essential
+        sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
+      shell: bash 
