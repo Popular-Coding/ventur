@@ -3,6 +3,8 @@ name: Create and publish Docker image to Docker Hub
 on:
   push:
     paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
       - 'docs/**'
       - '.gitignore'
       - '**.md'
@@ -13,6 +15,8 @@ on:
       - main 
   pull_request:
     paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
       - 'docs/**'
       - '.gitignore'
       - '**.md'
@@ -43,8 +47,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: popularcoding/ventur
-        tags: |
-              type=ref,event=branch
+          tags: |
+                type=ref,event=branch
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
