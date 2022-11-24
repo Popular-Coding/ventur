@@ -98,3 +98,103 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
     | _Setting your Development Node Endpoint in polkadot.js.org_ |
     |:--:|
     |![Setting your Custom Endpoint](docs/setting-custom-endpoint.png)|
+
+3. Navigate to Developer &rarr; Extrinsics
+
+#### 3. Testing the RFP Extrinsics
+
+##### Create an RFP
+
+| _Creating An RFP_ |
+|:--:|
+|![Creating an RFP](docs/create_rfp.png)|
+
+1. Navigate to the `createRFP` extrinsic
+2. Select your RFP owner and input an RFP ID
+3. Input the RFP IPFS Content Identifier (CID). This is a hash referring to the address based on the stored content. Modifying the contents stored in IPFS will modify the CID itself. More details can be found [here](https://docs.filebase.com/ipfs/ipfs-cids). If you don't have your own CID, for testing purposes, feel free to use this dummy CID: 
+
+        bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq
+
+4. Click on the `Submit Transaction` button.
+5. If you try to create an RFP another RFP with the same parameters, you'll see the transaction fail:
+
+| _Re-Creating An RFP_ |
+|:--:|
+|![Re-Creating an RFP](docs/re-creating-rfp.png)|
+
+##### Updating an RFP
+
+Instead, you can modify the RFP using the `updateRFP` extrinsic:
+
+1. Make sure you submit the correct owner and `rfpId`, otherwise the transaction will fail:
+
+| _Updating An RFP That Doesn't Exist_ |
+|:--:|
+|![Updating a non-existent RFP](docs/updating-non-existent-rfp.png)|
+
+2. Add your updated CID, and click `Submit Transaction`:
+
+| _Update An RFP_ |
+|:--:|
+|![Update an RFP](docs/update-rfp.png)|
+
+##### Bid On RFP
+
+Once you're ready to bid on an RFP, navigate to the `bidOnRFP` extrinsic
+
+1. Input an existing RFPId
+2. Input a unique Bid Id
+3. Fill in the bid details, including the owner of the bid, the CID of the the bid stored in IPFS, and the proposed Payment Amount associated with the bid
+4. Click on `Submit Transaction`
+
+| _Bid On An RFP_ |
+|:--:|
+|![Bid on an RFP](docs/submit-bid.png)|
+
+##### Update A Bid
+
+If you've found yourself updating your bid details in IPFS, you'll have generated a new CID for that bid. To update the details in storage, navigate to the `updateRFPBid` extrinsic.
+
+1. Fill in the correct `rfpId`, `bidId`, and the updated bid details.
+2. Click `Submit Transaction`
+
+| _Update a Bid_ |
+|:--:|
+|![Update a bid](docs/update-bid.png)|
+
+##### Shortlist A Bid
+
+You won't be able to accept a bid before shortlisting, so in order to shortlist an exsting bid, navigate to the `shortlistBid` extrinsic.
+
+1. Select the appropriate RFP Owner
+2. Fill in the fields for the `rfpId` and `bidId`
+3. Click `Submit Transaction`
+
+| _Shortlist a Bid_ |
+|:--:|
+|![Shortlist a bid](docs/shortlist-bid.png)|
+
+##### Accept A Bid
+
+Finally, you can now accept a bid for your RFP. Navigate to the `acceptRfpBid` extrinsic
+
+1. Select the appropriate RFP Owner
+2. Fill in the fields for the `rfpId` and the `bidId`
+3. Fill out all the payment details associated with the accepting of this RFP Bid
+4. Click `Submit Transaction`
+
+| _Accepting a Bid_ |
+|:--:|
+|![Accept a bid](docs/accept-rfp-details.png)|
+
+##### Claiming A Payment
+
+You can now even claim your first payment if you've filled out your payment details correctly. Navigate to the `payments` pallet and the `claim` extrinsic. 
+
+1. Select the claimant of the plaiment as the actor
+2. Fill in the `payerId` and the `paymentId`
+3. Click `Submit Transaction`
+
+| _Claiming A Payment_ |
+|:--:|
+|![Claim a Payment](docs/claim-payment.png)|
