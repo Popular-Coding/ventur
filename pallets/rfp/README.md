@@ -107,7 +107,7 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 
 | _Creating An RFP_ |
 |:--:|
-|![Creating an RFP](docs/create_rfp.png)|
+|![Creating an RFP](docs/create-rfp.png)|
 
 1. Navigate to the `createRFP` extrinsic
 2. Select your RFP owner and input an RFP ID
@@ -142,7 +142,8 @@ Instead, you can modify the RFP using the `updateRFP` extrinsic:
 
 Once you're ready to bid on an RFP, navigate to the `bidOnRFP` extrinsic
 
-1. Input an existing RFPId
+1. Input the RFP Owner Id
+2. Input an existing RFPId
 2. Input a unique Bid Id
 3. Fill in the bid details, including the owner of the bid, the CID of the the bid stored in IPFS, and the proposed Payment Amount associated with the bid
 4. Click on `Submit Transaction`
