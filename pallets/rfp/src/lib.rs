@@ -95,7 +95,17 @@ pub mod pallet {
 
 		pub(super) ipfs_hash: T::Cid,
 
-		// TODO: add bid / status field to this struct
+		pub(super) rfp_status: RFPStatus,
+	}
+
+	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, Eq, TypeInfo, Copy, MaxEncodedLen)]
+	/// Describes whether the RPF Owner is accepting bids, not accepting new bids,
+	/// or if a bid has already been accepted for this RFP
+	pub enum RFPStatus {
+		#[default]
+		AcceptingBids,
+		NotAcceptingNewBids,
+		AcceptedBid
 	}
 
 	#[derive(Default, Clone, Encode, Decode, RuntimeDebugNoBound, PartialEq, TypeInfo, MaxEncodedLen)]
@@ -249,6 +259,9 @@ pub mod pallet {
 
 		/// Bid was accepted, but there was an error with the payment initialization
 		PaymentInitializationFailed,
+
+		/// Bid on an RFP that is not currently accepting new bids
+		RFPNotAcceptingBids
 	}
 
 	#[pallet::call]
@@ -348,11 +361,20 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn bid_on_rfp(
 			origin: OriginFor<T>, 
+			rfp_owner: T::AccountId, 
 			rfp_id: T::RFPId, 
 			bid_id: T::BidId,
 			bid_details: BidDetails<T>
 		) -> DispatchResult {
 			let bid_owner = ensure_signed(origin)?;
+			let rfp_details = <RFPs<T>>::get(
+				&rfp_owner,
+				&rfp_id
+			).ok_or(<Error<T>>::NonExistentRFP)?;
+			ensure!(
+				rfp_details.rfp_status == RFPStatus::AcceptingBids,
+				<Error<T>>::RFPNotAcceptingBids
+			);
 			ensure!(
 				!<AllBids<T>>::contains_key(
 					&bid_id
@@ -503,40 +525,51 @@ pub mod pallet {
 			payment_details: pallet_payments::PaymentDetails::<T>
 		) -> DispatchResult {
 			let rfp_owner = ensure_signed(origin.clone())?;
-			ensure!(
-				<RFPs<T>>::contains_key(
-					&rfp_owner,
-					&rfp_id
-				),
-				Error::<T>::NonExistentRFP
-			);
 
-			let shortlisted_bids = <RFPToShortlistedBids<T>>::get(
-				&rfp_id
-			);
-			ensure!(
-				shortlisted_bids.is_some(),
-				Error::<T>::RFPHasNoShortlist
-			);
-			ensure!(
-				shortlisted_bids.unwrap().contains(&bid_id),
-				Error::<T>::AcceptedBidNotShortlisted
-			);
-
-			ensure!(
-				<RFPToAcceptedBid<T>>::get(&rfp_id).is_none(),
-				Error::<T>::BidAlreadyAccepted
-			);
-
-			<RFPToAcceptedBid<T>>::insert(
+			<RFPs<T>>::try_mutate(
+				&rfp_owner,
 				&rfp_id,
-				&bid_id,
-			);
+				| maybe_rfp_details | -> DispatchResult {
+					let rfp_details = 
+						maybe_rfp_details.as_mut()
+							.ok_or(
+								<Error<T>>::NonExistentRFP
+							)?;
+					ensure!(
+						rfp_details.rfp_status != RFPStatus::AcceptedBid,
+						<Error<T>>::BidAlreadyAccepted
+					);
 
-			<pallet_payments::Pallet<T>>::initialize_payment(
-				origin,
-				payment_details
-			).ok().ok_or(Error::<T>::PaymentInitializationFailed)?;
+					let shortlisted_bids = <RFPToShortlistedBids<T>>::get(
+						&rfp_id
+					);
+					ensure!(
+						shortlisted_bids.is_some(),
+						Error::<T>::RFPHasNoShortlist
+					);
+					ensure!(
+						shortlisted_bids.unwrap().contains(&bid_id),
+						Error::<T>::AcceptedBidNotShortlisted
+					);
+		
+					ensure!(
+						<RFPToAcceptedBid<T>>::get(&rfp_id).is_none(),
+						Error::<T>::BidAlreadyAccepted
+					);
+		
+					<pallet_payments::Pallet<T>>::initialize_payment(
+						origin,
+						payment_details
+					).ok().ok_or(Error::<T>::PaymentInitializationFailed)?;
+
+					<RFPToAcceptedBid<T>>::insert(
+						&rfp_id,
+						&bid_id,
+					);
+					rfp_details.rfp_status = RFPStatus::AcceptedBid;
+					Ok(())
+				}
+			)?;
 
 			Self::deposit_event(
 				Event::AcceptRFPBid(

@@ -30,6 +30,7 @@ fn test_create_rfp() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -60,6 +61,7 @@ fn test_re_create_rfp_fails() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -88,6 +90,7 @@ fn test_update_rfp_succeeds() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -99,6 +102,7 @@ fn test_update_rfp_succeeds() {
         let new_rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash: new_ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::update_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -129,6 +133,7 @@ fn test_update_rfp_fails_if_rfp_doesnt_exist() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_noop!(
             RFPModule::update_rfp(
@@ -152,6 +157,7 @@ fn test_cancel_rfp() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -202,6 +208,7 @@ fn test_bid_on_rfp() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -217,6 +224,7 @@ fn test_bid_on_rfp() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -239,6 +247,33 @@ fn test_bid_on_rfp() {
 }
 
 #[test]
+fn test_bid_on_rfp_fails_if_rfp_doesnt_exist() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        let bid_cid: Vec<u8> = BID_CID.as_bytes().to_vec();
+        let bid_cid_hash: [u8; 59] = bid_cid.try_into().unwrap();
+        let bid_details = BidDetails::<Test> {
+            bid_owner: BIDDER_ID,
+            ipfs_hash: bid_cid_hash,
+            bid_amount: BID_AMOUNT,
+        };
+
+        assert_noop!(
+            RFPModule::bid_on_rfp(
+                Origin::signed(BIDDER_ID),
+                ACCOUNT_ID,
+                RFP_ID,
+                BID_ID,
+                bid_details.clone()
+            ),
+            Error::<Test>::NonExistentRFP
+        );
+    })
+}
+
+#[test]
 fn test_bid_on_rfp_fails_with_existing_bid() {
     let mut t = test_externalities();
     t.execute_with(||
@@ -249,6 +284,7 @@ fn test_bid_on_rfp_fails_with_existing_bid() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -264,6 +300,7 @@ fn test_bid_on_rfp_fails_with_existing_bid() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -272,11 +309,50 @@ fn test_bid_on_rfp_fails_with_existing_bid() {
         assert_noop!(
             RFPModule::bid_on_rfp(
                 Origin::signed(BIDDER_ID),
+                ACCOUNT_ID,
                 RFP_ID,
                 BID_ID,
                 bid_details.clone()
             ),
             Error::<Test>::BidAlreadyExists
+        );
+    })
+}
+
+#[test]
+fn test_bid_on_rfp_fails_if_rfp_not_accepting_bids() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {
+        assert!(System::events().is_empty());
+        let cid: Vec<u8> = RFP_CID.as_bytes().to_vec();
+        let ipfs_hash: [u8; 59] = cid.try_into().unwrap();
+        let rfp_details = RFPDetails::<Test> {
+            rfp_owner: ACCOUNT_ID,
+            ipfs_hash,
+            rfp_status: RFPStatus::NotAcceptingNewBids
+        };
+        assert_ok!(RFPModule::create_rfp(
+            Origin::signed(ACCOUNT_ID),
+            RFP_ID,
+            rfp_details.clone(),
+        ));
+        let bid_cid: Vec<u8> = BID_CID.as_bytes().to_vec();
+        let bid_cid_hash: [u8; 59] = bid_cid.try_into().unwrap();
+        let bid_details = BidDetails::<Test> {
+            bid_owner: BIDDER_ID,
+            ipfs_hash: bid_cid_hash,
+            bid_amount: BID_AMOUNT,
+        };
+        assert_noop!(
+            RFPModule::bid_on_rfp(
+                Origin::signed(BIDDER_ID),
+                ACCOUNT_ID,
+                RFP_ID,
+                BID_ID,
+                bid_details.clone()
+            ),
+            Error::<Test>::RFPNotAcceptingBids
         );
     })
 }
@@ -292,6 +368,7 @@ fn test_shortlist_bid() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -307,6 +384,7 @@ fn test_shortlist_bid() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -341,6 +419,7 @@ fn test_shortlist_multiple_bids() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -356,6 +435,7 @@ fn test_shortlist_multiple_bids() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -369,6 +449,7 @@ fn test_shortlist_multiple_bids() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             OTHER_BID_ID,
             other_bid_details.clone()
@@ -419,6 +500,7 @@ fn test_shortlist_bid_fails_if_bid_non_existent() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -447,6 +529,7 @@ fn test_shortlist_bid_fails_if_rfp_has_no_such_bid() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -462,6 +545,7 @@ fn test_shortlist_bid_fails_if_rfp_has_no_such_bid() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -471,6 +555,7 @@ fn test_shortlist_bid_fails_if_rfp_has_no_such_bid() {
         let new_rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash: new_ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -486,6 +571,7 @@ fn test_shortlist_bid_fails_if_rfp_has_no_such_bid() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             OTHER_RFP_ID,
             OTHER_BID_ID,
             other_bid_details.clone()
@@ -512,6 +598,7 @@ fn test_no_bids_for_rfp() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -527,6 +614,7 @@ fn test_no_bids_for_rfp() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -536,6 +624,7 @@ fn test_no_bids_for_rfp() {
         let new_rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash: new_ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -564,6 +653,7 @@ fn test_update_rfp_bid() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -579,6 +669,7 @@ fn test_update_rfp_bid() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -621,6 +712,7 @@ fn test_update_fails_if_updater_not_owner() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -636,6 +728,7 @@ fn test_update_fails_if_updater_not_owner() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -670,6 +763,7 @@ fn test_update_fails_if_bid_doesnt_exist() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -739,6 +833,7 @@ fn test_accept_rfp_bid_fails_if_bid_not_shortlisted() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -754,6 +849,7 @@ fn test_accept_rfp_bid_fails_if_bid_not_shortlisted() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -801,6 +897,7 @@ fn test_accept_rfp_bid_fails_if_no_shortlist() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -816,6 +913,7 @@ fn test_accept_rfp_bid_fails_if_no_shortlist() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -858,6 +956,7 @@ fn test_accept_rfp_bid() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -873,6 +972,7 @@ fn test_accept_rfp_bid() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
@@ -919,6 +1019,10 @@ fn test_accept_rfp_bid() {
         let accepted_bid = 
             RFPModule::rfp_to_accepted_bid(RFP_ID).unwrap();
         assert_eq!(accepted_bid, BID_ID);
+        
+        let stored_details = 
+            RFPModule::get_rfps(ACCOUNT_ID, RFP_ID).unwrap();
+        assert_eq!(stored_details.rfp_status, RFPStatus::AcceptedBid);
     })
 }
 
@@ -933,6 +1037,7 @@ fn test_accept_rfp_bid_again_fails() {
         let rfp_details = RFPDetails::<Test> {
             rfp_owner: ACCOUNT_ID,
             ipfs_hash,
+            rfp_status: RFPStatus::AcceptingBids
         };
         assert_ok!(RFPModule::create_rfp(
             Origin::signed(ACCOUNT_ID),
@@ -948,6 +1053,7 @@ fn test_accept_rfp_bid_again_fails() {
         };
         assert_ok!(RFPModule::bid_on_rfp(
             Origin::signed(BIDDER_ID),
+            ACCOUNT_ID,
             RFP_ID,
             BID_ID,
             bid_details.clone()
