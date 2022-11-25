@@ -38,10 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set-up substrate requirements
-        run: |
-          sudo apt install -y build-essential
-          sudo apt install -y git clang curl libssl-dev llvm libudev-dev make protobuf-compiler
+      - name: Install Substrate Pre-req.
+        uses: ./.github/actions/ubuntu/install-substrate-prereq
 
       - name: Install and configure Rust
         uses: ./.github/actions/install-rust 
