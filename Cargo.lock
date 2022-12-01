@@ -727,7 +727,20 @@ checksum = "f6ed9c8b2d17acb8110c46f1da5bf4a696d745e1474a16db0cd2b49cd0249bf2"
 dependencies = [
  "core2",
  "multibase",
- "multihash",
+ "multihash 0.16.3",
+ "serde",
+ "unsigned-varint",
+]
+
+[[package]]
+name = "cid"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9b68e3193982cd54187d71afdb2a271ad4cf8af157858e9cb911b91321de143"
+dependencies = [
+ "core2",
+ "multibase",
+ "multihash 0.17.0",
  "serde",
  "unsigned-varint",
 ]
@@ -2829,7 +2842,7 @@ dependencies = [
  "libsecp256k1",
  "log",
  "multiaddr",
- "multihash",
+ "multihash 0.16.3",
  "multistream-select",
  "parking_lot 0.12.1",
  "pin-project",
@@ -3576,7 +3589,7 @@ dependencies = [
  "bs58",
  "byteorder",
  "data-encoding",
- "multihash",
+ "multihash 0.16.3",
  "percent-encoding",
  "serde",
  "static_assertions",
@@ -3600,6 +3613,23 @@ name = "multihash"
 version = "0.16.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c346cf9999c631f002d8f977c4eaeaa0e6386f16007202308d0b3757522c2cc"
+dependencies = [
+ "blake2b_simd",
+ "blake2s_simd",
+ "blake3",
+ "core2",
+ "digest 0.10.5",
+ "multihash-derive",
+ "sha2 0.10.6",
+ "sha3 0.10.5",
+ "unsigned-varint",
+]
+
+[[package]]
+name = "multihash"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "835d6ff01d610179fbce3de1694d007e500bf33a7f29689838941d6bf783ae40"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
@@ -4066,10 +4096,13 @@ dependencies = [
 name = "pallet-rfp"
 version = "4.0.0-dev"
 dependencies = [
+ "cid 0.9.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "pallet-balances",
+ "pallet-escrow",
+ "pallet-payments",
  "pallet-timestamp",
  "parity-scale-codec",
  "scale-info",
@@ -5581,7 +5614,7 @@ dependencies = [
  "asynchronous-codec",
  "bitflags",
  "bytes",
- "cid",
+ "cid 0.8.6",
  "either",
  "fnv",
  "fork-tree",

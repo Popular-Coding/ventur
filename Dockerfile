@@ -18,7 +18,7 @@
 FROM rust as temp
 
 # Build dependencies
-RUN apt update && apt install -y git clang curl libssl-dev llvm libudev-dev pkg-config make cmake libprotobuf-dev protobuf-compiler
+RUN apt-get update && apt-get install -y git clang libclang-dev curl libssl-dev llvm libudev-dev pkg-config make cmake libprotobuf-dev protobuf-compiler
 
 # Install rust and tools 
 RUN set -eux && \
