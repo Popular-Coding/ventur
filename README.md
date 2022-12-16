@@ -3,6 +3,8 @@
 <div align="center">
 
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
+[![Docker](https://img.shields.io/badge/docker_hub_-ventur-blue?style=plastic&logo=docker)](https://hub.docker.com/r/popularcoding/ventur)
+<br>
 [![Unit Tests](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml) 
 [![Cargo Check Release](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml)
 [![Check Docker Compose and Docker Build](https://github.com/Popular-Coding/ventur/actions/workflows/check-docker.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/check-docker.yml)
