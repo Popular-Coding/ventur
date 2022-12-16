@@ -1,20 +1,20 @@
->**Security disclosures**
->
->If you think you’ve found a potential security issue, please do not post it in the Issues.  Instead, please [email Popular Coding directly](mailto:contact@popularcoding.com).
+---
+name: Feature request
+about: Suggest an idea for this project
+title: "[Feature Request]"
+labels: feature
+assignees: Gryczka
 
-# Feature Request
+---
 
-**Tell us about your request**
-What feature are you interested in seeing built for Ventur?
+**Is your feature request related to a problem? Please describe.**
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
 
-**Tell us why you need this feature**
-What will you build with this feature, or how will it enable or improve your usage of Ventur?
+**Describe the solution you'd like**
+A clear and concise description of what you want to happen.
 
-**Anything else we should know?**
-Any additional relevant information.
+**Describe alternatives you've considered**
+A clear and concise description of any alternative solutions or features you've considered.
 
-**Related Issues**
-List any related issues.
-
-**Attachments**
-If you have any relevant screenshots or information you would like to share by attachment, please attach it to your issue.
+**Additional context**
+Add any other context or screenshots about the feature request here.
