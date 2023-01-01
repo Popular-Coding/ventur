@@ -17,6 +17,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Attribution - Parity - Uniques Pallet
+// This pallet's approach to interfaces/extrinsics for nfts is directly 
+// inspired by Parity's uniques pallet.  Below is a link to their source 
+// code, as well as the Apache 2.0 license that applies to it.
+
+// https://github.com/paritytech/substrate/blob/master/frame/uniques/src/lib.rs
+// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //! # NT-NFT Pallet
 //!
 //! The NT-NFT pallet provides functionality for creation, distribution, and management of NT-NFTs.
@@ -34,6 +55,7 @@
 //! - Thawing Collections.
 //! - Destroying Collections.
 //! - Minting NT-NFTs.
+//! - Updating NT-NFTs metadata.
 //! - Assigning NT-NFTs.
 //! - Burning NT-NFTs.
 //! - Discarding NT-NFTs.
@@ -50,6 +72,7 @@
 //! - `accept_assignment` - 
 //! - `cancel_assignment` - 
 //! - `mint_ntnft` - 
+//! - `update_ntnft` - 
 //! - `burn_ntnft` - 
 //! - `discard_ntnft` - 
 
@@ -208,6 +231,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to freeze an NT-NFT Collection
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn freeze_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
@@ -237,6 +261,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to thaw an NT-NFT Collection
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn thaw_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
@@ -268,6 +293,7 @@ pub mod pallet {
 		// TODO destroy_collection 
 		// (might need to reevaluate whether destroy makes sense, might need to just retire collection)
 
+		/// A dispatchable to mint an NT-NFT
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
 		pub fn mint_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
@@ -309,6 +335,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to burn an NT-NFT
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
 		pub fn burn_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction signed
@@ -352,6 +379,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to assign an NT-NFT
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 1).ref_time())]
 		pub fn assign_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId, target_address: T::AccountId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -387,6 +415,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to accept an NT-NFT assignment
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn accept_assignment(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -419,6 +448,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to reject an NT-NFT assignment
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 1).ref_time())]
 		pub fn cancel_assignment(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId, target_address: T::AccountId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -461,6 +491,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// A dispatchable to discard an NT-NFT assignment
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn discard_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction is signed
