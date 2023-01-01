@@ -64,17 +64,17 @@
 //!
 //! ### Dispatchable Functions
 //!
-//! - `create_collection` - 
-//! - `freeze_collection` - 
-//! - `thaw_collection` - 
-//! - `destroy_collection` - 
-//! - `assign_ntnft` - 
-//! - `accept_assignment` - 
-//! - `cancel_assignment` - 
-//! - `mint_ntnft` - 
-//! - `update_ntnft` - 
-//! - `burn_ntnft` - 
-//! - `discard_ntnft` - 
+//! - `create_collection` - Creates a collection administered by the calling AccountId.
+//! - `freeze_collection` - Freeze a collection, preventing any further actions from being performed on the collection until it is thawed.
+//! - `thaw_collection` - Thaw a frozen collection, allowing actions to be performed on the collection.
+//! - `destroy_collection` - Destroy a collection. <This extrinsic is not yet implemented.>
+//! - `assign_ntnft` - Assign a NT-NFT to an AccountId.
+//! - `accept_assignment` - Accept an NT-NFT assignment.
+//! - `cancel_assignment` - Cancel an NT-NFT assignment.
+//! - `mint_ntnft` - Mint a new NT-NFT in a collection.
+//! - `update_ntnft` - Update the metadata of a NT-NFT. <This extrinsic is not yet implemented.>
+//! - `burn_ntnft` - Burn a minted unassigned NT-NFT from a collection.
+//! - `discard_ntnft` - Discard an assigned NT-NFT.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
