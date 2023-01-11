@@ -91,14 +91,15 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 
+	pub const VEC_LIMIT: u32 = u32::MAX;
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
-	pub struct CollectionDetails<AccountId, T: Config> {
+	pub struct CollectionDetails<AccountId> {
 		pub(super) owner: AccountId,
 		pub(super) amount: u32,
 		pub(super) is_frozen: bool,
-		pub(super) image_ipfs_cid: T::Hash,
-		pub(super) metadata_ipfs_cid: T::Hash,
+		pub(super) image_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
+		pub(super) metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 	}
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
@@ -123,7 +124,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn collection)]
-	pub(super) type Collection<T: Config> = StorageMap<_, Blake2_128Concat, T::CollectionId, CollectionDetails<T::AccountId, T>, OptionQuery>;
+	pub(super) type Collection<T: Config> = StorageMap<_, Blake2_128Concat, T::CollectionId, CollectionDetails<T::AccountId>, OptionQuery>;
 	
 	#[pallet::storage]
 	#[pallet::getter(fn assignment)]
@@ -212,8 +213,8 @@ pub mod pallet {
 		pub fn create_collection(
 			origin: OriginFor<T>, 
 			collection_id: T::CollectionId,
-			image_ipfs_cid: T::Hash,
-			metadata_ipfs_cid: T::Hash,
+			image_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
+			metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			ensure!(!<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdAlreadyExists);

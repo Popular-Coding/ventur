@@ -101,55 +101,140 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 
 #### 3. Test Creating an NT-NFT Collection
 
-1. Create
-2. Confirm
+| _1. Create an NT-NFT Collection_ |
+|:--:|
+|![Creating an NT-NFT Collection](docs/create-collection.png)|
+Create an NT-NFT Collection.
+Example values:
+collectionId: ```150```
+imageIpfsCid: ```QmaG1CtUr74GPQwZeAnFhpiSgwtwGyR3zK2BRYh4DPDw3c```
+metadataIpfsCid: ```Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z```
 
+| _2. Verify created NT-NFT Collection_ |
+|:--:|
+|![Verify NT-NFT Collection in Chain State](docs/verify-create-collection.png)|
 #### 4. Test Minting an NT-NFT
 
-1. Create
-2. Mint
-3. Confirm
+
+| _1. Mint an NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/mint.png)|
+
+| _2. Verify minting NT-NFT to Collection_ |
+|:--:|
+|![Verify NT-NFT Mint](docs/verify-mint.png)|
 
 #### 5. Test Burning an NT-NFT
 
-1. Create
-2. Mint
-3. Burn
-4. Confirm
+| _1. Burn the previously created NT-NFT_ |
+|:--:|
+|![Burning an NT-NFT](docs/burn.png)|
+
+| _2. Verify burning the NT-NFT_ |
+|:--:|
+|![Verify NT-NFT Burn](docs/verify-burn.png)|
 
 #### 6. Test Assigning an NT-NFT to an Address
 
-1. Create
-2. Mint
-3. Assign
-4. Confirm
+| _1. Mint another NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/second-mint.png)|
+
+| _2. Assign the new NT-NFT to an Account_ |
+|:--:|
+|![Proposing an NT-NFT Assignment](docs/assign.png)|
+
+| _3. Verify the NT-NFT Proposed Assignment_ |
+|:--:|
+|![Verify the proposed assignment of an NT-NFT](docs/verify-assign.png)|
 
 #### 7. Test Accepting an Assigned NT-NFT
 
-1. Assign
-2. Accept
+| _1. Accept the NT-NFT assignment from the assigned account_ |
+|:--:|
+|![Accept an NT-NFT Assignment](docs/accept-assignment.png)|
+
+| _2. Verify the Accepted NT-NFT_ |
+|:--:|
+|![Verify the accepted NT-NFT](docs/verify-assign-final.png)|
 
 #### 8. Test Rejecting an Assigned NT-NFT
 
-1. Assign
-2. Cancel
+| _1. Mint another NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/.png)|
+
+| _2. Assign the new NT-NFT to an Account_ |
+|:--:|
+|![Proposing an NT-NFT Assignment](docs/.png)|
+
+| _3. Verify the NT-NFT Proposed Assignment_ |
+|:--:|
+|![Verify the proposed assignment of an NT-NFT](docs/.png)|
+
+| _3. Reject NT-NFT Proposed Assignment_ |
+|:--:|
+|![Reject the proposed assignment of an NT-NFT](docs/.png)|
+
+| _3. Verify the NT-NFT Rejection_ |
+|:--:|
+|![Verify the rejected assignment of an NT-NFT](docs/.png)|
 
 #### 9. Test Discarding an Assigned NT-NFT
 
-1. Assign
-2. Discard
+| _1. Mint another NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/.png)|
+
+| _2. Assign the new NT-NFT to an Account_ |
+|:--:|
+|![Proposing an NT-NFT Assignment](docs/.png)|
+
+| _3. Accept the new NT-NFT from the Account_ |
+|:--:|
+|![Accept an NT-NFT Assignment](docs/.png)|
+
+| _2. Verify the Accepted NT-NFT_ |
+|:--:|
+|![Verify the accepted NT-NFT](docs/.png)|
+
+| _2. Discard the NT-NFT_ |
+|:--:|
+|![Discard the NT-NFT](docs/.png)|
+
+| _2. Verify Discarding the NT-NFT_ |
+|:--:|
+|![Verify discarding the NT-NFT](docs/.png)|
 
 #### 10. Test Freezing an NT-NFT Collection
 
-1. Freeze
-2. Mint - Fail
+| _1. Freeze the previously created Collection_ |
+|:--:|
+|![Freezing a Collection](docs/.png)|
+
+| _2. Attempt to mint another NT-NFT to the Collection_ |
+|:--:|
+|![Attempt to mint an NT-NFT](docs/.png)|
+
+| _2. Verify that the mint failed_ |
+|:--:|
+|![Verify Failed Mint](docs/.png)|
 
 #### 11. Test Thawing an NT-NFT Collection
 
-1. Thaw
-2. Mint - Succeed
+| _1. Thaw the frozen Collection_ |
+|:--:|
+|![Thaw a Collection](docs/.png)|
 
-#### 12. Test Destroying an NT-NFT Collection
+| _2. Attempt to mint another NT-NFT to the Collection_ |
+|:--:|
+|![Attempt to mint an NT-NFT](docs/.png)|
+
+| _2. Verify that the mint succeeded_ |
+|:--:|
+|![Verify Successful Mint](docs/.png)|
+
+#### 12. Test Retiring an NT-NFT Collection
 
 1. Destroy
 2. Confirm
