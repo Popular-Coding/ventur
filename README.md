@@ -151,6 +151,10 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 
 [![Test Guide](https://img.shields.io/badge/Test_Guide-escrow_pallet-informational)](/pallets/escrow/README.md)
 
+[![Test Guide](https://img.shields.io/badge/Test_Guide-nt_nft_pallet-informational)](/pallets/nt-nft/README.md)
+
+[![Test Guide](https://img.shields.io/badge/Test_Guide-rfp_pallet-informational)](/pallets/rfp/README.md)
+
 ## Runtime Architecture
 
 ### Pallets
