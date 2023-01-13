@@ -182,3 +182,12 @@ The NT-NFT pallet's approach to interacting with NFT collections and items is in
 
 [![README](https://img.shields.io/badge/README-rfp_pallet-informational)](/pallets/rfp/README.md)
 [![rustdoc](https://img.shields.io/badge/rustdoc-rfp_pallet-informational)](https://docs.ventur.network/pallet_rfp/index.html)
+
+## Roadmap
+
+Stay up to date with the Ventur Roadmap hosted on GitHub:
+[Ventur Roadmap](https://github.com/orgs/Popular-Coding/projects/6)
+
+## Contribute to Ventur
+
+Ventur is an open source project, to learn about our team's development processes and to learn how you can contribute, read our [Contributor's Guide](https://github.com/Popular-Coding/ventur/wiki/Ventur-Wiki#contributing-to-ventur).
