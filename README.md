@@ -5,11 +5,13 @@
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
 [![Docker](https://img.shields.io/badge/dockerhub-grey?logo=docker)](https://hub.docker.com/r/popularcoding/ventur)
 <br>
-[![Unit Tests](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml) 
+[![Unit Tests](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test.yml)
 [![Cargo Check Release](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/check-release.yml)
 [![Check Docker Compose and Docker Build](https://github.com/Popular-Coding/ventur/actions/workflows/check-docker.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/check-docker.yml)
 [![Escrow Unit Test](https://github.com/Popular-Coding/ventur/actions/workflows/test-escrow.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test-escrow.yml)
 [![Payments Unit Test](https://github.com/Popular-Coding/ventur/actions/workflows/test-payments.yml/badge.svg?branch=main)](https://github.com/Popular-Coding/ventur/actions/workflows/test-payments.yml)
+<br>
+[![Discord](https://img.shields.io/badge/Discord-grey?logo=discord)](https://discord.gg/AcKuP4jg29)
 
 </div>
 
@@ -151,6 +153,10 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 
 [![Test Guide](https://img.shields.io/badge/Test_Guide-escrow_pallet-informational)](/pallets/escrow/README.md)
 
+[![Test Guide](https://img.shields.io/badge/Test_Guide-nt_nft_pallet-informational)](/pallets/nt-nft/README.md)
+
+[![Test Guide](https://img.shields.io/badge/Test_Guide-rfp_pallet-informational)](/pallets/rfp/README.md)
+
 ## Runtime Architecture
 
 ### Pallets
@@ -170,7 +176,20 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 [![README](https://img.shields.io/badge/README-nt_nft_pallet-informational)](/pallets/nt-nft/README.md)
 [![rustdoc](https://img.shields.io/badge/rustdoc-nt_nft_pallet-informational)](https://docs.ventur.network/pallet_ntnft/index.html)
 
+##### Attribution
+
+The NT-NFT pallet's approach to interacting with NFT collections and items is inspired by Parity's [Uniques Pallet](https://github.com/paritytech/substrate/blob/master/frame/uniques/src/lib.rs)
+
 #### RFP-Process
 
 [![README](https://img.shields.io/badge/README-rfp_pallet-informational)](/pallets/rfp/README.md)
 [![rustdoc](https://img.shields.io/badge/rustdoc-rfp_pallet-informational)](https://docs.ventur.network/pallet_rfp/index.html)
+
+## Roadmap
+
+Stay up to date with the Ventur Roadmap hosted on GitHub:
+[Ventur Roadmap](https://github.com/orgs/Popular-Coding/projects/6)
+
+## Contribute to Ventur
+
+Ventur is an open source project, to learn about our team's development processes and to learn how you can contribute, read our [Contributor's Guide](https://github.com/Popular-Coding/ventur/wiki/Ventur-Wiki#contributing-to-ventur).

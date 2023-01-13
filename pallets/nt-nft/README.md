@@ -4,7 +4,12 @@
 
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
 [![rustdoc](https://img.shields.io/badge/rustdoc-nt_nft_pallet-informational)](https://docs.ventur.network/pallet_ntnft/index.html)
+
 </div>
+
+##### Attribution
+
+The NT-NFT pallet's approach to interacting with NFT collections and items is inspired by Parity's [Uniques Pallet](https://github.com/paritytech/substrate/blob/master/frame/uniques/src/lib.rs) Which is licensed under Apache-2.0.
 
 ## NT-NFT Pallet Setup and Testing Guide (Ubuntu)
 
@@ -77,7 +82,7 @@ cargo run --release -- --dev
 
 | _Running your local node_ |
 |:--:|
-|![Running the Node](docs/running-node.png)|
+|![Running the Node](docs/running-node.webp)|
 
 #### 2. Access the Node through the polkadot.js.org interface
 
@@ -86,7 +91,7 @@ Once you have a ventur node running locally, follow this link:
 
 | _Accessing your Development Node Endpoint in polkadot.js.org_ |
 |:--:|
-|![Accessing the Node](docs/access-polkadot-js-org.png)|
+|![Accessing the Node](docs/access-polkadot-js-org.webp)|
 
 _Confirm that you can see the recent blocks listed._
 If you are not able to access the block explorer on polkadot.js.org, you should:
@@ -97,59 +102,140 @@ If you are not able to access the block explorer on polkadot.js.org, you should:
 
     | _Setting your Development Node Endpoint in polkadot.js.org_ |
     |:--:|
-    |![Setting your Custom Endpoint](docs/setting-custom-endpoint.png)|
+    |![Setting your Custom Endpoint](docs/setting-custom-endpoint.webp)|
 
 #### 3. Test Creating an NT-NFT Collection
 
-1. Create
-2. Confirm
+| _1. Create an NT-NFT Collection_ |
+|:--:|
+|![Creating an NT-NFT Collection](docs/create-collection.webp)|
+Create an NT-NFT Collection.
+Example values:
+collectionId: ```150```
+imageIpfsCid: ```QmaG1CtUr74GPQwZeAnFhpiSgwtwGyR3zK2BRYh4DPDw3c```
+metadataIpfsCid: ```Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z```
+
+| _2. Verify created NT-NFT Collection in Chain State_ |
+|:--:|
+|![Verify NT-NFT Collection in Chain State](docs/verify-create-collection.webp)|
 
 #### 4. Test Minting an NT-NFT
 
-1. Create
-2. Mint
-3. Confirm
+| _1. Mint an NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/mint.webp)|
+
+| _2. Verify minting NT-NFT to Collection in chain state_ |
+|:--:|
+|![Verify NT-NFT Mint](docs/verify-mint.webp)|
 
 #### 5. Test Burning an NT-NFT
 
-1. Create
-2. Mint
-3. Burn
-4. Confirm
+| _1. Burn the previously created NT-NFT_ |
+|:--:|
+|![Burning an NT-NFT](docs/burn.webp)|
+
+| _2. Verify burning the NT-NFT in chain state_ |
+|:--:|
+|![Verify NT-NFT Burn](docs/verify-burn.webp)|
 
 #### 6. Test Assigning an NT-NFT to an Address
 
-1. Create
-2. Mint
-3. Assign
-4. Confirm
+| _1. Mint another NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/second-mint.webp)|
+
+| _2. Assign the new NT-NFT to an Account_ |
+|:--:|
+|![Proposing an NT-NFT Assignment](docs/assign.webp)|
+
+| _3. Verify the NT-NFT Proposed Assignment in chain state_ |
+|:--:|
+|![Verify the proposed assignment of an NT-NFT](docs/verify-assign.webp)|
 
 #### 7. Test Accepting an Assigned NT-NFT
 
-1. Assign
-2. Accept
+| _1. Accept the NT-NFT assignment from the assigned account_ |
+|:--:|
+|![Accept an NT-NFT Assignment](docs/accept-assignment.webp)|
+
+| _2. Verify the Accepted NT-NFT in chain state_ |
+|:--:|
+|![Verify the accepted NT-NFT](docs/verify-assign-final.webp)|
 
 #### 8. Test Rejecting an Assigned NT-NFT
 
-1. Assign
-2. Cancel
+| _1. Mint another NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/mint-for-reject.webp)|
+
+| _2. Assign the new NT-NFT to an Account_ |
+|:--:|
+|![Proposing an NT-NFT Assignment](docs/assign-for-reject.webp)|
+
+| _3. Verify the NT-NFT Proposed Assignment in Chain State_ |
+|:--:|
+|![Verify the proposed assignment of an NT-NFT](docs/verify-assign-for-reject.webp)|
+
+| _3. Reject NT-NFT Proposed Assignment_ |
+|:--:|
+|![Reject the proposed assignment of an NT-NFT](docs/reject-assignment.webp)|
+
+| _3. Verify the NT-NFT Rejection in Chain State_ |
+|:--:|
+|![Verify the rejected assignment of an NT-NFT in chain state](docs/cancelled-chain-state.webp)|
+|![Verify the rejected assignment of an NT-NFT in chain state](docs/cancelled-chain-state-2.webp)|
 
 #### 9. Test Discarding an Assigned NT-NFT
 
-1. Assign
-2. Discard
+| _1. Mint another NT-NFT to the previously created Collection_ |
+|:--:|
+|![Minting an NT-NFT](docs/mint-for-discard.webp)|
+
+| _2. Assign the new NT-NFT to an Account_ |
+|:--:|
+|![Proposing an NT-NFT Assignment](docs/propose-assign-for-discard.webp)|
+
+| _3. Accept the new NT-NFT from the Account_ |
+|:--:|
+|![Accept an NT-NFT Assignment](docs/accept-assign-for-discard.webp)|
+
+| _2. Verify the Accepted NT-NFT in chain state_ |
+|:--:|
+|![Verify in chain state the accepted NT-NFT](docs/verify-accept-for-discard.webp)|
+
+| _2. Discard the NT-NFT_ |
+|:--:|
+|![Discard the NT-NFT](docs/discard.webp)|
+
+| _2. Verify Discarding the NT-NFT in chain state_ |
+|:--:|
+|![Verify in chain state discarding the NT-NFT](docs/verify-discard.webp)|
 
 #### 10. Test Freezing an NT-NFT Collection
 
-1. Freeze
-2. Mint - Fail
+| _1. Freeze the previously created Collection_ |
+|:--:|
+|![Freezing a Collection](docs/freeze.webp)|
+
+| _2. Attempt to mint another NT-NFT to the Collection_ |
+|:--:|
+|![Attempt to mint an NT-NFT](docs/frozen-mint.webp)|
+
+| _2. Verify in chain state that the mint failed_ |
+|:--:|
+|![Verify Failed Mint](docs/verify-freeze.webp)|
 
 #### 11. Test Thawing an NT-NFT Collection
 
-1. Thaw
-2. Mint - Succeed
+| _1. Thaw the frozen Collection_ |
+|:--:|
+|![Thaw a Collection](docs/thaw.webp)|
 
-#### 12. Test Destroying an NT-NFT Collection
+| _2. Attempt to mint another NT-NFT to the Collection_ |
+|:--:|
+|![Attempt to mint an NT-NFT](docs/thaw-mint.webp)|
 
-1. Destroy
-2. Confirm
+| _2. Verify in chain state that the mint succeeded_ |
+|:--:|
+|![Verify Successful Mint](docs/thaw-verify.webp)|
