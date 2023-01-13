@@ -4,7 +4,12 @@
 
 [![License](https://img.shields.io/github/license/Popular-Coding/ventur?color=green)](https://github.com/Popular-Coding/ventur/blob/main/LICENSE)
 [![rustdoc](https://img.shields.io/badge/rustdoc-nt_nft_pallet-informational)](https://docs.ventur.network/pallet_ntnft/index.html)
+
 </div>
+
+##### Attribution
+
+The NT-NFT pallet's approach to interacting with NFT collections and items is inspired by Parity's [Uniques Pallet](https://github.com/paritytech/substrate/blob/master/frame/uniques/src/lib.rs) Which is licensed under Apache-2.0.
 
 ## NT-NFT Pallet Setup and Testing Guide (Ubuntu)
 
@@ -113,8 +118,8 @@ metadataIpfsCid: ```Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z```
 | _2. Verify created NT-NFT Collection_ |
 |:--:|
 |![Verify NT-NFT Collection in Chain State](docs/verify-create-collection.png)|
-#### 4. Test Minting an NT-NFT
 
+#### 4. Test Minting an NT-NFT
 
 | _1. Mint an NT-NFT to the previously created Collection_ |
 |:--:|

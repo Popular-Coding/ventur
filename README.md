@@ -174,6 +174,10 @@ Unit tests can be run locally using the ``` cargo test ``` command.
 [![README](https://img.shields.io/badge/README-nt_nft_pallet-informational)](/pallets/nt-nft/README.md)
 [![rustdoc](https://img.shields.io/badge/rustdoc-nt_nft_pallet-informational)](https://docs.ventur.network/pallet_ntnft/index.html)
 
+##### Attribution
+
+The NT-NFT pallet's approach to interacting with NFT collections and items is inspired by Parity's [Uniques Pallet](https://github.com/paritytech/substrate/blob/master/frame/uniques/src/lib.rs)
+
 #### RFP-Process
 
 [![README](https://img.shields.io/badge/README-rfp_pallet-informational)](/pallets/rfp/README.md)
