@@ -15,7 +15,7 @@
 
 # Changes: Created temp image for build, Specified ventur node build folders, Copied binaries to ubuntu image
 
-FROM rust as temp
+FROM rust:1.65 as temp
 
 # Build dependencies
 RUN apt-get update && apt-get install -y git clang libclang-dev curl libssl-dev llvm libudev-dev pkg-config make cmake libprotobuf-dev protobuf-compiler
