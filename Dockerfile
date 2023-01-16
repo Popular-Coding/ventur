@@ -15,7 +15,7 @@
 
 # Changes: Created temp image for build, Specified ventur node build folders, Copied binaries to ubuntu image
 
-FROM rust as temp
+FROM rust:1.65 as temp
 
 # Build dependencies
 RUN apt-get update && apt-get install -y git clang libclang-dev curl libssl-dev llvm libudev-dev pkg-config make cmake libprotobuf-dev protobuf-compiler
@@ -25,9 +25,9 @@ RUN set -eux && \
 	# install `rust-src` component for ui test
 	rustup component add rust-src rustfmt clippy && \
 	# install specific Rust nightly, default is stable, use minimum components
-	rustup toolchain install nightly-2022-07-25 --profile minimal --component rustfmt clippy && \
-	# "alias" pinned nightly-2022-07-25 toolchain as nightly
-	ln -s /usr/local/rustup/toolchains/nightly-2022-07-25-x86_64-unknown-linux-gnu /usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu && \
+	rustup toolchain install nightly-2023-01-10 --profile minimal --component rustfmt clippy && \
+	# "alias" pinned nightly-2023-01-10 toolchain as nightly
+	ln -s /usr/local/rustup/toolchains/nightly-2023-01-10-x86_64-unknown-linux-gnu /usr/local/rustup/toolchains/nightly-x86_64-unknown-linux-gnu && \
 	# install wasm toolchain
 	rustup target add wasm32-unknown-unknown && \
 	rustup target add wasm32-unknown-unknown --toolchain nightly && \

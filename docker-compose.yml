@@ -3,7 +3,7 @@ version: "3.2"
 services:
   dev:
     container_name: ventur-node
-    image: paritytech/ci-linux:production
+    image: paritytech/ci-linux:production@sha256:c0ef0e660d4db2b33d0c89bc37a5110026951d5d68c83876466498aef98b6662
     working_dir: /var/www/ventur-node
     ports:
       - "9944:9944"
