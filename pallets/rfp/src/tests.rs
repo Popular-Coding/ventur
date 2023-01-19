@@ -887,7 +887,7 @@ fn test_accept_rfp_bid_fails_if_bid_not_shortlisted() {
 }
 
 #[test]
-fn test_accept_rfp_bid_fails_if_no_shortlist() {
+fn test_accept_rfp_bid_fails_if_bid_doesnt_exist() {
     let mut t = test_externalities();
     t.execute_with(||
     {
@@ -940,7 +940,7 @@ fn test_accept_rfp_bid_fails_if_no_shortlist() {
                 OTHER_BID_ID,
                 payment_details.clone()
             ),
-            Error::<Test>::RFPHasNoShortlist
+            Error::<Test>::NoSuchBidForRFP
         );
     })
 }
