@@ -512,7 +512,7 @@ pub mod pallet {
 					);
 					item_details.is_accepted = false;
 					item_details.is_assigned = false;
-					<ProposedAssignment<T>>::remove(&collection_id, &who);
+					<ProposedAssignment<T>>::remove(&collection_id, &target_address);
 					<CanceledAssignment<T>>::insert(&collection_id, &target_address, ntnft_id);
 					Ok(())
 				}
