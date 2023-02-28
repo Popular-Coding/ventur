@@ -117,30 +117,64 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
         type CollectionId: Member + Parameter + MaxEncodedLen + Copy;
 		type ItemId: Member + Parameter + MaxEncodedLen + Copy;
     }
 
 	#[pallet::storage]
 	#[pallet::getter(fn collection)]
-	pub(super) type Collection<T: Config> = StorageMap<_, Blake2_128Concat, T::CollectionId, CollectionDetails<T::AccountId>, OptionQuery>;
+	pub(super) type Collection<T: Config> = 
+		StorageMap<_, 
+			Blake2_128Concat, 
+			T::CollectionId, 
+			CollectionDetails<T::AccountId>, 
+			OptionQuery>;
 	
 	#[pallet::storage]
 	#[pallet::getter(fn assignment)]
-	pub(super) type Assignment<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::AccountId, T::ItemId, OptionQuery>;
-	
+	pub(super) type Assignment<T: Config> = 
+		StorageDoubleMap<_, 
+			Blake2_128Concat, 
+			T::CollectionId, 
+			Blake2_128Concat, 
+			T::AccountId, 
+			T::ItemId, 
+			OptionQuery>;
+			
 	#[pallet::storage]
 	#[pallet::getter(fn proposed_assignment)]
-	pub(super) type ProposedAssignment<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::AccountId, T::ItemId, OptionQuery>;
+	pub(super) type ProposedAssignment<T: Config> = 
+		StorageDoubleMap<_, 
+			Blake2_128Concat, 
+			T::CollectionId, 
+			Blake2_128Concat, 
+			T::AccountId, 
+			T::ItemId, 
+			OptionQuery>;
 	
+	// ToDo: Evaluate whether keeping cancelled assignments is worth the storage cost.
 	#[pallet::storage]
 	#[pallet::getter(fn canceled_assignment)]
-	pub(super) type CanceledAssignment<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::AccountId, T::ItemId, OptionQuery>;
+	pub(super) type CanceledAssignment<T: Config> = 
+		StorageDoubleMap<_, 
+			Blake2_128Concat, 
+			T::CollectionId, 
+			Blake2_128Concat, 
+			T::AccountId, 
+			T::ItemId, 
+			OptionQuery>;
 	
 	#[pallet::storage]
 	#[pallet::getter(fn item)]
-	pub(super) type Item<T: Config> = StorageDoubleMap<_, Blake2_128Concat, T::CollectionId, Blake2_128Concat, T::ItemId, ItemDetails<T::AccountId>, OptionQuery>;
+	pub(super) type Item<T: Config> = 
+		StorageDoubleMap<_, 
+			Blake2_128Concat, 
+			T::CollectionId, 
+			Blake2_128Concat, 
+			T::ItemId, 
+			ItemDetails<T::AccountId>, 
+			OptionQuery>;
 	
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -290,9 +324,6 @@ pub mod pallet {
 			Self::deposit_event(Event::ThawCollection(collection_id, who));
 			Ok(())
 		}
-
-		// TODO destroy_collection 
-		// (might need to reevaluate whether destroy makes sense, might need to just retire collection)
 
 		/// A dispatchable to mint an NT-NFT
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
@@ -481,7 +512,7 @@ pub mod pallet {
 					);
 					item_details.is_accepted = false;
 					item_details.is_assigned = false;
-					<ProposedAssignment<T>>::remove(&collection_id, &who);
+					<ProposedAssignment<T>>::remove(&collection_id, &target_address);
 					<CanceledAssignment<T>>::insert(&collection_id, &target_address, ntnft_id);
 					Ok(())
 				}

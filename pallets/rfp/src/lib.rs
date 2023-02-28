@@ -81,7 +81,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_payments::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type RFPId: Member + Parameter + MaxEncodedLen + From<u32> + Copy + Clone + Eq + TypeInfo;
 		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 		type Cid: MaxEncodedLen + TypeInfo + Decode + Encode + Clone + Eq + sp_std::fmt::Debug;
@@ -543,14 +543,27 @@ pub mod pallet {
 					let shortlisted_bids = <RFPToShortlistedBids<T>>::get(
 						&rfp_id
 					);
-					ensure!(
-						shortlisted_bids.is_some(),
-						Error::<T>::RFPHasNoShortlist
-					);
-					ensure!(
-						shortlisted_bids.unwrap().contains(&bid_id),
-						Error::<T>::AcceptedBidNotShortlisted
-					);
+
+					if shortlisted_bids.is_some() {
+						// If there has been a shortlisting process, 
+						// ensure that the bid to be accepted has been
+						// shortlisted
+						ensure!(
+							shortlisted_bids.unwrap().contains(&bid_id),
+							Error::<T>::AcceptedBidNotShortlisted
+						);
+					} else {
+						// Otherwise, just make sure the bid exists
+						let all_bids_for_rfp = <RFPToBids<T>>::get(
+							&rfp_id,
+						).ok_or(
+							Error::<T>::NoBidsForRFP
+						)?;
+						ensure!(
+							all_bids_for_rfp.contains(&bid_id),
+							Error::<T>::NoSuchBidForRFP
+						);
+					}
 		
 					ensure!(
 						<RFPToAcceptedBid<T>>::get(&rfp_id).is_none(),

@@ -135,6 +135,57 @@ To run the container with localhost:9944 published so it can interact with the P
 docker run -p 9944:9944 ventur-node
 ```
 
+## Running a Ventur Node in a Local Test-Net
+### Manual Setup
+#### Launch the Relay Chain
+
+```bash
+# Clone
+git clone https://github.com/paritytech/polkadot
+cd polkadot
+
+# Compile Polkadot with the real overseer feature
+cargo build --release --bin polkadot
+
+# Generate a raw chain spec
+./target/release/polkadot build-spec --chain rococo-local --disable-default-bootnode --raw > rococo-local-cfde.json
+
+# Alice
+./target/release/polkadot --chain rococo-local-cfde.json --alice --tmp
+
+# Bob (In a separate terminal)
+./target/release/polkadot --chain rococo-local-cfde.json --bob --tmp --port 30334
+```
+
+#### Launch the Parachain
+
+```bash
+# Clone
+git clone https://github.com/Popular-Coding/ventur
+cd ventur
+
+# Compile
+cargo build --release --bin ventur-node
+
+# Export genesis state
+./target/release/ventur-node export-genesis-state > genesis-state
+
+# Export genesis wasm
+./target/release/ventur-node export-genesis-wasm > genesis-wasm
+
+# Collator1
+./target/release/ventur-node --collator --alice --force-authoring --tmp --port 40335 --ws-port 9946 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30335
+
+# Collator2
+./target/release/ventur-node --collator --bob --force-authoring --tmp --port 40336 --ws-port 9947 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30336
+
+# Parachain Full Node 1
+./target/release/ventur-node --tmp --port 40337 --ws-port 9948 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30337
+
+# Parachain Full Node 2
+./target/release/ventur-node --tmp --port 40338 --ws-port 9949 -- --execution wasm --chain ../polkadot/rococo-local-cfde.json --port 30338
+```
+
 ## Connect with Polkadot-JS Apps Front-end
 
 Once the node is running locally, you can connect it with **Polkadot-JS App** front-end

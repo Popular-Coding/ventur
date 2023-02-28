@@ -87,7 +87,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type EscrowCurrency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber> + Clone + Eq;
 	}
 
@@ -215,8 +215,8 @@ pub mod pallet {
 			);
 
 			// Insert new Escrow and Administrator into Storage
-			let admins: BoundedVec<T::AccountId, ConstU32<{VEC_LIMIT}>> = vec![who.clone()].try_into().unwrap();
-			let contributions: BoundedVec<Contribution<T::AccountId, T>, ConstU32<{VEC_LIMIT}>> = vec![].try_into().unwrap();
+			let admins: BoundedVec<T::AccountId, ConstU32<{VEC_LIMIT}>> = BoundedVec::try_from(vec![who.clone()]).unwrap();
+			let contributions: BoundedVec<Contribution<T::AccountId, T>, ConstU32<{VEC_LIMIT}>> = Default::default();
 			<Escrow<T>>::insert(
 				who.clone(), 
 				EscrowDetails {
