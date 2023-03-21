@@ -72,27 +72,48 @@ pub mod pallet {
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
+	pub enum SubscriptionFeeFrequency {
+		Weekly,
+		#[default]
+		Monthly,
+		Yearly
+	}
+
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
-	pub struct SubscriptionDetails<AccountId> {
-		// maybe differentiate minter from owner
-		// On assignment but not yet accepted, who is the owner?
-		pub(super) owner: AccountId,
+	pub struct SubscriptionService<T: Config> {
+		pub(super) service_owner: T::AccountId,
+		pub(super) subscription_service_id: T::SubscriptionServiceId,
 		pub(super) is_active: bool,
-		pub(super) cost: u32,
-		pub(super) frequency: u32,
-		pub(super) upfront_discount: StorageMap<_, Blake2_128Concat, u32, u32>, // MAP of(#_of_periods, discounted_cost)
+		pub(super) base_subscription_fee: u64,
+		pub(super) default_frequency: SubscriptionFeeFrequency,
 		pub(super) metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 	}
 	
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
-	pub struct SubscriptionInstance<AccountId> {
-		pub(super) owner: AccountId,
+	pub struct Subscription<T: Config> {
+		pub(super) subscriber: T::AccountId,
+		pub(super) subscription_service_id: T::SubscriptionServiceId,
+		pub(super) subscription_id: T::SubscriptionId,
 		pub(super) is_active: bool,
-		pub(super) cost: u32,
-		pub(super) frequency: u32,
-		pub(super) upfront_discount: StorageMap<_, Blake2_128Concat, u32, u32>, // MAP of(#_of_periods, discounted_cost)
-		pub(super) metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
+		pub(super) subscription_fee: u64,
+		pub(super) payment_frequency: SubscriptionFeeFrequency,
+		pub(super) most_recent_payment_date: u64,
+		pub(super) next_payment_due_date: u64
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_subscription_payments_calendar)]
+	pub type SubscriptionPaymentsCalendar<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		u64, // payment date
+		Blake2_128Concat,
+		T::SubscriptionServiceId,
+		BoundedVec<
+				T::SubscriptionId, ConstU32<{VEC_LIMIT}>
+			>,
+		OptionQuery,
+	>;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -101,8 +122,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-        type CollectionId: Member + Parameter + MaxEncodedLen + Copy;
-		type ItemId: Member + Parameter + MaxEncodedLen + Copy;
+		type SubscriptionServiceId: Member + Parameter + MaxEncodedLen + Copy;
+		type SubscriptionId: Member + Parameter + MaxEncodedLen + Copy;
     }
 
 	
@@ -123,28 +144,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-        /// A dispatchable to create a Subscription
-        #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
-		pub fn create_collection(
-			origin: OriginFor<T>, 
-			collection_id: T::CollectionId,
-			image_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
-			metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			ensure!(!<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdAlreadyExists);
-			<Collection<T>>::insert(
-				collection_id, 
-				CollectionDetails {
-					owner: who.clone(),
-					amount: 0,
-					is_frozen: false,
-					image_ipfs_cid: image_ipfs_cid,
-					metadata_ipfs_cid: metadata_ipfs_cid,
-				});
-
-			Self::deposit_event(Event::CreateCollection(collection_id, who));
-			Ok(())
-		}
+        
 	}
 }
