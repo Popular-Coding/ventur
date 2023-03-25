@@ -305,6 +305,12 @@ impl pallet_ntnft::Config for Runtime {
 	type ItemId = u128;
 } 
 
+impl pallet_subscription::Config for Runtime {
+	type Event = Event;
+	type SubscriptionServiceId = u32;
+	type SubscriptionId = u32;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime

@@ -5,6 +5,7 @@ members = [
     "pallets/payments",
     "pallets/rfp",
     "pallets/nt-nft",
+    "pallets/subscription",
     "runtime",
 ]
 [profile.release]

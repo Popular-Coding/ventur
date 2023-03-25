@@ -51,6 +51,7 @@ pallet-escrow = { version = "4.0.0-dev", default-features = false, path = "../pa
 pallet-payments = { version = "4.0.0-dev", default-features = false, path = "../pallets/payments" }
 pallet-rfp = { version = "4.0.0-dev", default-features = false, path = "../pallets/rfp" }
 pallet-ntnft = { version = "4.0.0-dev", default-features = false, path = "../pallets/nt-nft" }
+pallet-subscription = { version = "4.0.0-dev", default-features = false, path = "../pallets/subscription" }
 
 [build-dependencies]
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
