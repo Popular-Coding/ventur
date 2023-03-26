@@ -145,10 +145,12 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		CreateSubscription(),
+		// [owner_id, subscription_id]
+		CreateSubscription(T::AccountId, T::SubscriptionServiceId),
+		// [subscriber_id, subscription_id]
+		InitiateSubscription(T::AccountId, T::SubscriptionId),
 		ClaimSubscriptionPayment(),
 		CancelSubscription(),
-
 	}
 
 	#[pallet::error]
@@ -159,6 +161,38 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-        
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn create_subscription_service (
+			origin: OriginFor<T>, 
+			subscription_service_id: T::SubscriptionServiceId,
+			_base_subscription_fee: u64,
+			_metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
+		) -> DispatchResult {
+			let service_owner = ensure_signed(origin)?;
+			Self::deposit_event(
+				Event::CreateSubscription(
+					service_owner, subscription_service_id
+				)
+			);
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn initiate_subscription (
+			origin: OriginFor<T>, 
+			_subscription_service_id: T::SubscriptionServiceId,
+			subscription_id: T::SubscriptionId,
+			_service_owner: T::AccountId,
+			_subscription_fee: u64,
+			_payment_frequencey: SubscriptionFeeFrequency,
+		) -> DispatchResult {
+			let subscriber_id = ensure_signed(origin)?;
+			Self::deposit_event(
+				Event::InitiateSubscription(
+					subscriber_id, subscription_id
+				)
+			);
+			Ok(())
+		}
 	}
 }
