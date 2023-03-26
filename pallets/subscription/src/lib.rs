@@ -67,11 +67,14 @@ mod tests;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-
+	use frame_support::{
+		pallet_prelude::*,
+		traits::UnixTime,
+	};
 	pub const VEC_LIMIT: u32 = u32::MAX;
 
+	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
 	pub enum SubscriptionFeeFrequency {
 		Weekly,
 		#[default]
@@ -90,6 +93,7 @@ pub mod pallet {
 	}
 	
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
+	#[scale_info(skip_type_params(T))]
 	pub struct Subscription<T: Config> {
 		pub(super) subscriber: T::AccountId,
 		pub(super) subscription_service_id: T::SubscriptionServiceId,
@@ -102,16 +106,26 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn get_subscription_payments_calendar)]
-	pub type SubscriptionPaymentsCalendar<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn get_subscription_services)]
+	pub type SubscriptionServicesToSubscriptionIds<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		u64, // payment date
+		T::AccountId, 
 		Blake2_128Concat,
 		T::SubscriptionServiceId,
 		BoundedVec<
 				T::SubscriptionId, ConstU32<{VEC_LIMIT}>
 			>,
+		OptionQuery,
+	>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_subscriptions)]
+	pub type Subscriptions<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::SubscriptionId,
+		Subscription<T>,
 		OptionQuery,
 	>;
 
@@ -124,6 +138,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type SubscriptionServiceId: Member + Parameter + MaxEncodedLen + Copy;
 		type SubscriptionId: Member + Parameter + MaxEncodedLen + Copy;
+		type TimeProvider: UnixTime;
     }
 
 	
