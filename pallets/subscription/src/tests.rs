@@ -1,14 +1,20 @@
 use crate::*;
 use mock::*;
-use frame_support::assert_ok;
+use crate::Config as MyConfig;
+use frame_support::{
+    assert_ok, 
+    assert_noop,
+    traits::{
+        Currency,
+    },
+};
 use sp_runtime::BoundedVec;
 
 const OWNER_ACCOUNT_ID: u64 = 11111;
 const SUBSCRIBER_ID: u64 = 1234;
 const SUBSCRIPTION_SERVICE_ID: u128 = 128;
 const SUBSCRIPTION_ID: u128 = 9;
-const BASE_SUBSCRIPTION_FEE: u64 = 96;
-
+const BASE_SUBSCRIPTION_FEE: u128 = 96;
 
 #[test]
 fn test_create_rfp() {
@@ -22,6 +28,7 @@ fn test_create_rfp() {
                 Origin::signed(OWNER_ACCOUNT_ID),
                 SUBSCRIPTION_SERVICE_ID,
                 BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
                 meta_cid,
             )
         );
@@ -32,8 +39,48 @@ fn test_create_rfp() {
                     SUBSCRIPTION_SERVICE_ID,
                 )
         ));
-    }
-    );  
+    
+        let subscription_service_details = 
+            SubscriptionsModule::get_subscription_services(
+                SUBSCRIPTION_SERVICE_ID
+            );
+        assert!(subscription_service_details.is_some());
+        let subscriptions = 
+            SubscriptionsModule::get_subscription_services_to_subscription_ids(
+                OWNER_ACCOUNT_ID, SUBSCRIPTION_SERVICE_ID
+            ).unwrap();
+        
+        assert!(subscriptions.is_empty());
+    });  
+}
+
+#[test]
+fn test_fail_on_reused_id() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {   
+		let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert!(System::events().is_empty());
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+                meta_cid.clone(),
+            )
+        );
+        assert_noop!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+                meta_cid,
+            ),
+            Error::<Test>::SubscriptionIdExists
+        );
+    });  
 }
 
 #[test]
@@ -41,7 +88,20 @@ fn test_initiate_subscription() {
     let mut t = test_externalities();
     t.execute_with(||
     {   
-        assert!(System::events().is_empty());
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &SUBSCRIBER_ID, 
+            BASE_SUBSCRIPTION_FEE
+        );
+		let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+                meta_cid.clone(),
+            )
+        );
         assert_ok!(
             SubscriptionsModule::initiate_subscription(
                 Origin::signed(SUBSCRIBER_ID),
@@ -59,6 +119,61 @@ fn test_initiate_subscription() {
                     SUBSCRIPTION_ID,
                 )
         ));
+        assert_eq!(
+            <Test as MyConfig>::PaymentCurrency::total_balance(
+                &OWNER_ACCOUNT_ID
+            ), 
+            BASE_SUBSCRIPTION_FEE
+        );
+        
+        let subscriptions_for_service = 
+            SubscriptionsModule::get_subscription_services_to_subscription_ids(
+                OWNER_ACCOUNT_ID, SUBSCRIPTION_SERVICE_ID
+            ).unwrap();
+        let subscription = subscriptions_for_service.first().unwrap();
+        assert_eq!(subscription, &SUBSCRIPTION_ID);
+        
+        let subscription = 
+            SubscriptionsModule::get_subscriptions(
+                SUBSCRIPTION_ID
+            ).unwrap();
+        assert_eq!(subscription.subscription_id, SUBSCRIPTION_ID);
+    }
+    );  
+}
+
+#[test]
+fn test_initiate_subscription_fails_with_no_service() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {   
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &SUBSCRIBER_ID, 
+            BASE_SUBSCRIPTION_FEE
+        );
+        assert_noop!(
+            SubscriptionsModule::initiate_subscription(
+                Origin::signed(SUBSCRIBER_ID),
+                90,
+                SUBSCRIPTION_ID,
+                OWNER_ACCOUNT_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+            ),
+            Error::<Test>::NonExsitantSubscriptionService
+        );
+        assert_eq!(
+            <Test as MyConfig>::PaymentCurrency::total_balance(
+                &OWNER_ACCOUNT_ID
+            ), 
+            0
+        );
+        assert_eq!(
+            <Test as MyConfig>::PaymentCurrency::total_balance(
+                &SUBSCRIBER_ID
+            ), 
+            BASE_SUBSCRIPTION_FEE
+        );
     }
     );  
 }

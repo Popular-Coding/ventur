@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances,
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		SubscriptionsModule: pallet_subscriptions::{Pallet, Call, Storage, Event<T>},
 	}
@@ -67,17 +67,18 @@ impl system::Config for Test {
 }
 /// Balance of an account.
 pub type Balance = u128;
+parameter_types! {
+	pub const ExistentialDeposit: u128 = 1;
+}
 
 impl pallet_balances::Config for Test {
 	type MaxLocks = ConstU32<50>;
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
-	/// The type for recording an account's balance.
 	type Balance = Balance;
-	/// The ubiquitous event type.
 	type Event = Event;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<500>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Test>;
 }
@@ -99,6 +100,7 @@ impl pallet_subscriptions::Config for Test {
 	type SubscriptionServiceId = u128;
 	type SubscriptionId = u128;
 	type TimeProvider = pallet_timestamp::Pallet<Test>;
+	type PaymentCurrency = Balances;
 }
 
 pub fn test_externalities() -> sp_io::TestExternalities {
