@@ -62,3 +62,49 @@ fn test_initiate_subscription() {
     }
     );  
 }
+
+#[test]
+fn test_claim_subscription_payment() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    { 
+        assert!(System::events().is_empty());
+        assert_ok!(
+            SubscriptionsModule::claim_subscription_payment(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_ID,
+            )
+        );
+        System::assert_last_event(
+            mock::Event::SubscriptionsModule(
+                crate::Event::ClaimSubscriptionPayment(
+                    OWNER_ACCOUNT_ID, 
+                    SUBSCRIPTION_ID,
+                )
+        ));
+    }
+    );  
+}
+
+#[test]
+fn test_cancel_subscription_service() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    { 
+        assert!(System::events().is_empty());
+        assert_ok!(
+            SubscriptionsModule::cancel_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+            )
+        );
+        System::assert_last_event(
+            mock::Event::SubscriptionsModule(
+                crate::Event::CancelSubscription(
+                    OWNER_ACCOUNT_ID, 
+                    SUBSCRIPTION_SERVICE_ID,
+                )
+        ));
+    }
+    );  
+}

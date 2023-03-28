@@ -149,8 +149,10 @@ pub mod pallet {
 		CreateSubscription(T::AccountId, T::SubscriptionServiceId),
 		// [subscriber_id, subscription_id]
 		InitiateSubscription(T::AccountId, T::SubscriptionId),
-		ClaimSubscriptionPayment(),
-		CancelSubscription(),
+		// [owner_id, subscription_id]
+		ClaimSubscriptionPayment(T::AccountId, T::SubscriptionId),
+		// [owner_id, subscription_id]
+		CancelSubscription(T::AccountId, T::SubscriptionServiceId),
 	}
 
 	#[pallet::error]
@@ -190,6 +192,34 @@ pub mod pallet {
 			Self::deposit_event(
 				Event::InitiateSubscription(
 					subscriber_id, subscription_id
+				)
+			);
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn claim_subscription_payment (
+			origin: OriginFor<T>, 
+			subscription_id: T::SubscriptionId,
+		) -> DispatchResult {
+			let subscriber_owner_id = ensure_signed(origin)?;
+			Self::deposit_event(
+				Event::ClaimSubscriptionPayment(
+					subscriber_owner_id, subscription_id
+				)
+			);
+			Ok(())
+		}
+
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn cancel_subscription_service (
+			origin: OriginFor<T>, 
+			subscription_service_id: T::SubscriptionServiceId,
+		) -> DispatchResult {
+			let subscription_owner_id = ensure_signed(origin)?;
+			Self::deposit_event(
+				Event::CancelSubscription(
+					subscription_owner_id, subscription_service_id
 				)
 			);
 			Ok(())
