@@ -313,24 +313,97 @@ fn test_claim_payment() {
 
 
 #[test]
+fn test_cancel_subscription_fails_with_non_owner_cancelling() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    { 
+        assert!(System::events().is_empty());
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &SUBSCRIBER_ID, 
+            BASE_SUBSCRIPTION_FEE * 2
+        );
+		let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Adhoc,
+                meta_cid.clone(),
+            )
+        );
+        assert_ok!(
+            SubscriptionsModule::initiate_subscription(
+                Origin::signed(SUBSCRIBER_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+                OWNER_ACCOUNT_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Adhoc,
+            )
+        );
+        assert_noop!(
+            SubscriptionsModule::cancel_subscription(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_ID,
+            ),
+            Error::<Test>::NonOwnerModifyingSubscription
+        );
+    }
+    );  
+}
+
+#[test]
 fn test_cancel_subscription() {
     let mut t = test_externalities();
     t.execute_with(||
     { 
         assert!(System::events().is_empty());
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &SUBSCRIBER_ID, 
+            BASE_SUBSCRIPTION_FEE * 2
+        );
+		let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Adhoc,
+                meta_cid.clone(),
+            )
+        );
+        assert_ok!(
+            SubscriptionsModule::initiate_subscription(
+                Origin::signed(SUBSCRIBER_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+                OWNER_ACCOUNT_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Adhoc,
+            )
+        );
         assert_ok!(
             SubscriptionsModule::cancel_subscription(
-                Origin::signed(OWNER_ACCOUNT_ID),
+                Origin::signed(SUBSCRIBER_ID),
                 SUBSCRIPTION_ID,
-            )
+            ),
         );
         System::assert_last_event(
             mock::Event::SubscriptionsModule(
                 crate::Event::CancelSubscription(
-                    OWNER_ACCOUNT_ID, 
+                    SUBSCRIBER_ID, 
                     SUBSCRIPTION_ID,
                 )
         ));
+        assert_noop!(
+            SubscriptionsModule::claim_subscription_payment(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+            ),
+            Error::<Test>::ClaimingPaymentFromInactiveSubscription
+        );
     }
     );  
 }

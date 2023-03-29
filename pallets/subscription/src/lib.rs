@@ -197,7 +197,9 @@ pub mod pallet {
 		// Trying to claim a payment from an inactive subscription
 		ClaimingPaymentFromInactiveSubscription,
 		// Trying to claim a payment before the due date
-		ClaimingPaymentBeforeDueDate
+		ClaimingPaymentBeforeDueDate,
+		// Someone other than the owner is trying to modify the subscription
+		NonOwnerModifyingSubscription
 	}
 
 	#[pallet::call]
@@ -389,6 +391,23 @@ pub mod pallet {
 			subscription_id: T::SubscriptionId,
 		) -> DispatchResult {
 			let subscription_owner_id = ensure_signed(origin)?;
+			<Subscriptions::<T>>::try_mutate(
+				&subscription_id, 
+				| maybe_subscription_details | -> DispatchResult {
+					let subscription_details = 
+						maybe_subscription_details
+						.as_mut()
+						.ok_or(
+							Error::<T>::NoSubscriptionFound
+						)?;
+					ensure!(
+						subscription_details.subscriber == subscription_owner_id,
+						Error::<T>::NonOwnerModifyingSubscription,
+					);
+					subscription_details.is_active = false;
+					Ok(())
+				}
+			)?;
 			Self::deposit_event(
 				Event::CancelSubscription(
 					subscription_owner_id, subscription_id
