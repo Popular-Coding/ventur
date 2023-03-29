@@ -88,7 +88,8 @@ pub mod pallet {
 		Weekly,
 		#[default]
 		Monthly,
-		Yearly
+		Yearly,
+		Adhoc,
 	}
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
@@ -106,6 +107,7 @@ pub mod pallet {
 	#[scale_info(skip_type_params(T))]
 	pub struct Subscription<T: Config> {
 		pub(super) subscriber: T::AccountId,
+		pub(super) subscription_service_owner: T::AccountId,
 		pub(super) subscription_service_id: T::SubscriptionServiceId,
 		pub(super) subscription_id: T::SubscriptionId,
 		pub(super) is_active: bool,
@@ -177,7 +179,7 @@ pub mod pallet {
 		// [owner_id, subscription_id]
 		ClaimSubscriptionPayment(T::AccountId, T::SubscriptionId),
 		// [owner_id, subscription_id]
-		CancelSubscription(T::AccountId, T::SubscriptionServiceId),
+		CancelSubscription(T::AccountId, T::SubscriptionId),
 	}
 
 	#[pallet::error]
@@ -187,7 +189,15 @@ pub mod pallet {
 		// Subscription Service not found in storage
 		NonExsitantSubscriptionService,
 		// Too many services outside the bound of the bounded vec
-		TooManyServices
+		TooManyServices,
+		// No Subscription for given service id
+		NoSubscriptionForService,
+		// No Subscription found for id
+		NoSubscriptionFound,
+		// Trying to claim a payment from an inactive subscription
+		ClaimingPaymentFromInactiveSubscription,
+		// Trying to claim a payment before the due date
+		ClaimingPaymentBeforeDueDate
 	}
 
 	#[pallet::call]
@@ -274,6 +284,7 @@ pub mod pallet {
 			);
 			let subscription_detail: Subscription<T> = Subscription {
 				subscriber: subscriber.clone(),
+				subscription_service_owner: service_owner.clone(),
 				subscription_service_id,
 				subscription_id,
 				is_active: true,
@@ -314,26 +325,73 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn claim_subscription_payment (
 			origin: OriginFor<T>, 
+			subscription_service_id: T::SubscriptionServiceId,
 			subscription_id: T::SubscriptionId,
 		) -> DispatchResult {
-			let subscriber_owner_id = ensure_signed(origin)?;
+			let subscription_owner_id = ensure_signed(origin)?;
+			ensure!(
+				<SubscriptionServicesToSubscriptionIds<T>>::get(
+					&subscription_owner_id,
+					&subscription_service_id,
+				).ok_or(
+					Error::<T>::NonExsitantSubscriptionService
+				)?.contains(&subscription_id),
+				Error::<T>::NoSubscriptionForService
+			);
+			<Subscriptions::<T>>::try_mutate(
+				&subscription_id, 
+				| maybe_subscription_details | -> DispatchResult {
+					let subscription_details = 
+						maybe_subscription_details
+						.as_mut()
+						.ok_or(
+							Error::<T>::NoSubscriptionFound
+						)?;
+						ensure!(
+							subscription_details.is_active,
+							Error::<T>::ClaimingPaymentFromInactiveSubscription
+						);
+					// Deny the payment if it is before the due date
+					let time_now: u64 = T::TimeProvider::now().as_secs();
+					ensure!(
+						time_now >= subscription_details.next_payment_due_date,
+						Error::<T>::ClaimingPaymentBeforeDueDate,
+					);
+					let subscription_fee = subscription_details.subscription_fee;
+					let subscriber = &subscription_details.subscriber;
+					T::PaymentCurrency::transfer(
+						subscriber,
+						&subscription_owner_id,
+						subscription_fee,
+						AllowDeath,
+					)?;
+					subscription_details.most_recent_payment_date = time_now;
+					let next_payment_due_date = Pallet::<T>::calculate_next_payment_date(
+						time_now,
+						subscription_details.payment_frequency.clone()
+					);
+					subscription_details.next_payment_due_date = next_payment_due_date;
+					Ok(())
+				}
+			)?;
+
 			Self::deposit_event(
 				Event::ClaimSubscriptionPayment(
-					subscriber_owner_id, subscription_id
+					subscription_owner_id, subscription_id
 				)
 			);
 			Ok(())
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn cancel_subscription_service (
+		pub fn cancel_subscription (
 			origin: OriginFor<T>, 
-			subscription_service_id: T::SubscriptionServiceId,
+			subscription_id: T::SubscriptionId,
 		) -> DispatchResult {
 			let subscription_owner_id = ensure_signed(origin)?;
 			Self::deposit_event(
 				Event::CancelSubscription(
-					subscription_owner_id, subscription_service_id
+					subscription_owner_id, subscription_id
 				)
 			);
 			Ok(())
@@ -354,6 +412,7 @@ pub mod pallet {
 				SubscriptionFeeFrequency::Weekly=>RelativeDuration::weeks(1),
 				SubscriptionFeeFrequency::Monthly=>RelativeDuration::months(1),
 				SubscriptionFeeFrequency::Yearly=>RelativeDuration::years(1),
+				SubscriptionFeeFrequency::Adhoc=>RelativeDuration::weeks(0)
 			};
 			let next_payment_date = last_payment_date_as_naive_date + delta;
 			return next_payment_date.timestamp().try_into().unwrap();

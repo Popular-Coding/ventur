@@ -17,7 +17,7 @@ const SUBSCRIPTION_ID: u128 = 9;
 const BASE_SUBSCRIPTION_FEE: u128 = 96;
 
 #[test]
-fn test_create_rfp() {
+fn test_create_subscription() {
     let mut t = test_externalities();
     t.execute_with(||
     {   
@@ -179,45 +179,156 @@ fn test_initiate_subscription_fails_with_no_service() {
 }
 
 #[test]
-fn test_claim_subscription_payment() {
+fn test_claim_subscription_payment_fails_for_uninstantiated_service() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    { 
+        assert!(System::events().is_empty());
+        assert_noop!(
+            SubscriptionsModule::claim_subscription_payment(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+            ),
+            Error::<Test>::NonExsitantSubscriptionService
+        );
+    }
+    );  
+}
+
+#[test]
+fn test_claim_subscription_payment_fails_for_uninstantiated_subscription() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    { 
+        let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert!(System::events().is_empty());
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+                meta_cid,
+            )
+        );
+        assert_noop!(
+            SubscriptionsModule::claim_subscription_payment(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+            ),
+            Error::<Test>::NoSubscriptionForService
+        );
+    }
+    );  
+}
+
+#[test]
+fn test_claim_subscription_fails_before_payment_date() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {   
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &SUBSCRIBER_ID, 
+            BASE_SUBSCRIPTION_FEE
+        );
+		let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+                meta_cid.clone(),
+            )
+        );
+        assert_ok!(
+            SubscriptionsModule::initiate_subscription(
+                Origin::signed(SUBSCRIBER_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+                OWNER_ACCOUNT_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Monthly,
+            )
+        );
+        assert_noop!(
+            SubscriptionsModule::claim_subscription_payment(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+            ),
+            Error::<Test>::ClaimingPaymentBeforeDueDate
+        );
+    }
+    );  
+}
+
+#[test]
+fn test_claim_payment() {
+    let mut t = test_externalities();
+    t.execute_with(||
+    {   
+        let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
+            &SUBSCRIBER_ID, 
+            BASE_SUBSCRIPTION_FEE * 2
+        );
+		let meta_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>> = b"Qmb232AquR57EMUGgU92TxeZ8QyAJF5nERjdPZRNNJoh6z".to_vec().try_into().unwrap();
+        assert_ok!(
+            SubscriptionsModule::create_subscription_service(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Adhoc,
+                meta_cid.clone(),
+            )
+        );
+        assert_ok!(
+            SubscriptionsModule::initiate_subscription(
+                Origin::signed(SUBSCRIBER_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+                OWNER_ACCOUNT_ID,
+                BASE_SUBSCRIPTION_FEE,
+                SubscriptionFeeFrequency::Adhoc,
+            )
+        );
+        assert_ok!(
+            SubscriptionsModule::claim_subscription_payment(
+                Origin::signed(OWNER_ACCOUNT_ID),
+                SUBSCRIPTION_SERVICE_ID,
+                SUBSCRIPTION_ID,
+            )
+        );
+        assert_eq!(
+            <Test as MyConfig>::PaymentCurrency::total_balance(
+                &OWNER_ACCOUNT_ID
+            ), 
+            2 * BASE_SUBSCRIPTION_FEE
+        );
+    }
+    );  
+}
+
+
+#[test]
+fn test_cancel_subscription() {
     let mut t = test_externalities();
     t.execute_with(||
     { 
         assert!(System::events().is_empty());
         assert_ok!(
-            SubscriptionsModule::claim_subscription_payment(
+            SubscriptionsModule::cancel_subscription(
                 Origin::signed(OWNER_ACCOUNT_ID),
                 SUBSCRIPTION_ID,
             )
         );
         System::assert_last_event(
             mock::Event::SubscriptionsModule(
-                crate::Event::ClaimSubscriptionPayment(
-                    OWNER_ACCOUNT_ID, 
-                    SUBSCRIPTION_ID,
-                )
-        ));
-    }
-    );  
-}
-
-#[test]
-fn test_cancel_subscription_service() {
-    let mut t = test_externalities();
-    t.execute_with(||
-    { 
-        assert!(System::events().is_empty());
-        assert_ok!(
-            SubscriptionsModule::cancel_subscription_service(
-                Origin::signed(OWNER_ACCOUNT_ID),
-                SUBSCRIPTION_SERVICE_ID,
-            )
-        );
-        System::assert_last_event(
-            mock::Event::SubscriptionsModule(
                 crate::Event::CancelSubscription(
                     OWNER_ACCOUNT_ID, 
-                    SUBSCRIPTION_SERVICE_ID,
+                    SUBSCRIPTION_ID,
                 )
         ));
     }
