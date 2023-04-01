@@ -1,0 +1,51 @@
+[package]
+name = "pallet-subscription"
+version = "4.0.0-dev"
+description = "Subscription pallet for defining custom runtime logic."
+authors = ["Popular Coding <https://github.com/popular-coding>"]
+homepage = "https://www.popularcoding.com/"
+edition = "2021"
+license = "GPLv3"
+publish = false
+repository = "https://github.com/Popular-Coding/ventur"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = [
+	"derive",
+] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+# chronoutil = "0.2.3"
+# chrono-light = "0.1.5"
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.29" }
+
+
+[dev-dependencies]
+hex-literal = "0.3.4"
+sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+sp-io = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"scale-info/std",
+	"frame-support/std",
+	"frame-system/std",
+	"frame-benchmarking/std",
+	"pallet-balances/std",
+    "pallet-timestamp/std",
+	"sp-runtime/std",
+    "sp-std/std",
+]
+
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]

@@ -55,6 +55,9 @@ pub use pallet_rfp;
 /// Import the NT-NFT pallet.
 pub use pallet_ntnft;
 
+/// Import the subscription pallet.
+pub use pallet_subscription;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -305,6 +308,14 @@ impl pallet_ntnft::Config for Runtime {
 	type ItemId = u128;
 } 
 
+impl pallet_subscription::Config for Runtime {
+	type Event = Event;
+	type SubscriptionServiceId = u32;
+	type SubscriptionId = u32;
+	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
+	type PaymentCurrency = Balances;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub struct Runtime
@@ -326,6 +337,7 @@ construct_runtime!(
 		Payments: pallet_payments,
 		RFP: pallet_rfp,
 		NTNFT: pallet_ntnft,
+		Subscription: pallet_subscription
 	}
 );
 
@@ -374,6 +386,7 @@ mod benches {
 		[pallet_payments, Payments]
 		[pallet_rfp, RFP]
 		[pallet_ntnft, NTNFT]
+		[pallet_subscription, Subscription]
 	);
 }
 
