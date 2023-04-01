@@ -29,31 +29,22 @@
 //!
 //! The Subscription pallet provides functions for:
 //!
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
+//! - Creating a Subscription Service
+//! - Subscribing to a Service
+//! - Collecting Subscription Payments
+//! - Cancelling Subscriptions
+//! TODO:
+//! - Editing Services
+//! - Editing Subscriptions
 //! 
 //! ## Interface
 //!
 //! ### Dispatchable Functions
 //!
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
-//! - 
+//! - create_subscription_service
+//! - initiate_subscription
+//! - claim_subscription_payment
+//! - cancel_subscription
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -78,12 +69,15 @@ pub mod pallet {
 		},
 		storage::bounded_vec::BoundedVec,
 	};
-	use chrono::naive::NaiveDateTime;
-	use chronoutil::relative_duration::RelativeDuration;
+	// use chrono::NaiveDateTime;
+	// use chronoutil::relative_duration::RelativeDuration;
 
 	pub const VEC_LIMIT: u32 = u32::MAX;
+	pub const SECS_IN_DAY: u64 = 86400;
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
+	/// An enum that describes how often a subscription should be
+	/// making payments
 	pub enum SubscriptionFeeFrequency {
 		Weekly,
 		#[default]
@@ -94,31 +88,66 @@ pub mod pallet {
 
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
+	/// The details surrounding a subscription service
 	pub struct SubscriptionService<T: Config> {
+		/// The subscription service owner/admin
+		// TODO: Potentially alternative admins
 		pub(super) service_owner: T::AccountId,
+
+		/// ID of this Service
 		pub(super) subscription_service_id: T::SubscriptionServiceId,
+
+		/// Whether this service is active, or cancelled
 		pub(super) is_active: bool,
+
+		/// The default subscription fee for this service
+		/// Could be used in case there are temporary discounts
+		/// for individual subscriptions
 		pub(super) base_subscription_fee: BalanceOf<T>,
+
+		/// The default payment frequency for this service
 		pub(super) default_frequency: SubscriptionFeeFrequency,
+
+		/// IPFS CID for the metadata for this service, storing general 
+		/// information about this subscription
 		pub(super) metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 	}
 	
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, Default, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
+	/// Details regarding an individual subscription to a service
 	pub struct Subscription<T: Config> {
+		/// Owner of this subscription
 		pub(super) subscriber: T::AccountId,
+
+		/// Owner/admin of the service (who will be getting paid)
 		pub(super) subscription_service_owner: T::AccountId,
+
+		/// Id of the service this subscription subscribes to
 		pub(super) subscription_service_id: T::SubscriptionServiceId,
+
+		/// The ID of this subscription instance
 		pub(super) subscription_id: T::SubscriptionId,
+
+		/// Whether this subscription is active
 		pub(super) is_active: bool,
+
+		/// How much this subscription costs per payment period
 		pub(super) subscription_fee: BalanceOf<T>,
+
+		/// How often the payment should be collected
 		pub(super) payment_frequency: SubscriptionFeeFrequency,
+
+		/// When the most recent successful payment happened
 		pub(super) most_recent_payment_date: u64,
+
+		/// When the next payment should be collected
 		pub(super) next_payment_due_date: u64
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_subscription_services)]
+	/// Mapping our subscription IDs --> Subscription Service Details
 	pub type SubscriptionServices<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
@@ -129,6 +158,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_subscription_services_to_subscription_ids)]
+	/// Mapping (Subscription Owner, Service Id) --> [Subscription IDs]
 	pub type SubscriptionServicesToSubscriptionIds<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
@@ -143,6 +173,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_subscriptions)]
+	/// Mapping Subscription IDs --> Subscription Details
 	pub type Subscriptions<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
@@ -172,39 +203,40 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		// [owner_id, subscription_id]
+		/// [owner_id, subscription_id]
 		CreateSubscription(T::AccountId, T::SubscriptionServiceId),
-		// [subscriber_id, subscription_id]
+		/// [subscriber_id, subscription_id]
 		InitiateSubscription(T::AccountId, T::SubscriptionId),
-		// [owner_id, subscription_id]
+		/// [owner_id, subscription_id]
 		ClaimSubscriptionPayment(T::AccountId, T::SubscriptionId),
-		// [owner_id, subscription_id]
+		/// [owner_id, subscription_id]
 		CancelSubscription(T::AccountId, T::SubscriptionId),
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		// Subscription with ID already created
+		/// Subscription with ID already created
 		SubscriptionIdExists,
-		// Subscription Service not found in storage
+		/// Subscription Service not found in storage
 		NonExsitantSubscriptionService,
-		// Too many services outside the bound of the bounded vec
+		/// Too many services outside the bound of the bounded vec
 		TooManyServices,
-		// No Subscription for given service id
+		/// No Subscription for given service id
 		NoSubscriptionForService,
-		// No Subscription found for id
+		/// No Subscription found for id
 		NoSubscriptionFound,
-		// Trying to claim a payment from an inactive subscription
+		/// Trying to claim a payment from an inactive subscription
 		ClaimingPaymentFromInactiveSubscription,
-		// Trying to claim a payment before the due date
+		/// Trying to claim a payment before the due date
 		ClaimingPaymentBeforeDueDate,
-		// Someone other than the owner is trying to modify the subscription
+		/// Someone other than the owner is trying to modify the subscription
 		NonOwnerModifyingSubscription
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		/// Initialize a subscription service
 		pub fn create_subscription_service (
 			origin: OriginFor<T>, 
 			subscription_service_id: T::SubscriptionServiceId,
@@ -213,6 +245,8 @@ pub mod pallet {
 			metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 		) -> DispatchResult {
 			let service_owner = ensure_signed(origin)?;
+
+			// Make sure we're not reusing subscription IDs
 			ensure!(
 				<SubscriptionServices<T>>::get(
 					&subscription_service_id
@@ -227,11 +261,14 @@ pub mod pallet {
 				default_frequency,
 				metadata_ipfs_cid
 			};
+
+			// Insert the details into our storage map
 			<SubscriptionServices<T>>::insert(
 				&subscription_service_id, 
 				subscription_service_details
 			);
 
+			// Initialize an empty vector for the subscription IDs
 			let empty_subscriptions_vec: BoundedVec<
 				T::SubscriptionId, ConstU32<{VEC_LIMIT}>
 			> = BoundedVec::<
@@ -257,6 +294,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		/// Start a subscription to a service
 		pub fn initiate_subscription (
 			origin: OriginFor<T>, 
 			subscription_service_id: T::SubscriptionServiceId,
@@ -266,19 +304,25 @@ pub mod pallet {
 			payment_frequency: SubscriptionFeeFrequency,
 		) -> DispatchResult {
 			let subscriber = ensure_signed(origin)?;
+			
+			// Make sure the subscription we're subscribing to exists
+			ensure!(
+				<SubscriptionServices<T>>::get(
+					&subscription_service_id,
+				).is_some(),
+				Error::<T>::NonExsitantSubscriptionService
+			);
+
+			// Make the first payment to initiate the subscription
 			T::PaymentCurrency::transfer(
 				&subscriber,
 				&service_owner,
 				subscription_fee,
 				AllowDeath,
 			)?;
-			ensure!(
-				!<SubscriptionServicesToSubscriptionIds<T>>::get(
-					&service_owner,
-					&subscription_service_id,
-				).is_none(),
-				Error::<T>::NonExsitantSubscriptionService
-			);
+
+			// Calculate when the next payment should be based on 
+			// current date and the frequency
 			let time_now: u64 = T::TimeProvider::now().as_secs();
 			let next_payment_due_date = Pallet::<T>::calculate_next_payment_date(
 				time_now,
@@ -295,6 +339,8 @@ pub mod pallet {
 				most_recent_payment_date: time_now,
 				next_payment_due_date
 			};
+
+			// Add the subscription id to the list of subscribed ids
 			<SubscriptionServicesToSubscriptionIds<T>>::try_mutate(
 				&service_owner,
 				&subscription_service_id,
@@ -313,6 +359,8 @@ pub mod pallet {
 					Ok(())
 				}
 			)?;
+
+			// Persist to storage
 			<Subscriptions<T>>::insert(
 				&subscription_id, subscription_detail
 			);
@@ -325,12 +373,18 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		/// Dispatchable for claiming payments once they're due
 		pub fn claim_subscription_payment (
 			origin: OriginFor<T>, 
 			subscription_service_id: T::SubscriptionServiceId,
 			subscription_id: T::SubscriptionId,
 		) -> DispatchResult {
+			// TODO: Pass in vector of subscription ids to collect from, 
+			// so we can batch our requests
+
 			let subscription_owner_id = ensure_signed(origin)?;
+
+			// Verify the subscription id is subscribed to the given service
 			ensure!(
 				<SubscriptionServicesToSubscriptionIds<T>>::get(
 					&subscription_owner_id,
@@ -349,10 +403,13 @@ pub mod pallet {
 						.ok_or(
 							Error::<T>::NoSubscriptionFound
 						)?;
-						ensure!(
-							subscription_details.is_active,
-							Error::<T>::ClaimingPaymentFromInactiveSubscription
-						);
+					
+					// Don't allow collecting payments from cancelled subscriptions
+					ensure!(
+						subscription_details.is_active,
+						Error::<T>::ClaimingPaymentFromInactiveSubscription
+					);
+
 					// Deny the payment if it is before the due date
 					let time_now: u64 = T::TimeProvider::now().as_secs();
 					ensure!(
@@ -361,12 +418,15 @@ pub mod pallet {
 					);
 					let subscription_fee = subscription_details.subscription_fee;
 					let subscriber = &subscription_details.subscriber;
+					// Enact the payment
 					T::PaymentCurrency::transfer(
 						subscriber,
 						&subscription_owner_id,
 						subscription_fee,
 						AllowDeath,
 					)?;
+					
+					// Update the next payment due date
 					subscription_details.most_recent_payment_date = time_now;
 					let next_payment_due_date = Pallet::<T>::calculate_next_payment_date(
 						time_now,
@@ -386,6 +446,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		/// Cancel a subscription
 		pub fn cancel_subscription (
 			origin: OriginFor<T>, 
 			subscription_id: T::SubscriptionId,
@@ -400,10 +461,14 @@ pub mod pallet {
 						.ok_or(
 							Error::<T>::NoSubscriptionFound
 						)?;
+					
+					// Verify actor can perform the action
 					ensure!(
 						subscription_details.subscriber == subscription_owner_id,
 						Error::<T>::NonOwnerModifyingSubscription,
 					);
+					
+					// Change the is_active field to false
 					subscription_details.is_active = false;
 					Ok(())
 				}
@@ -422,19 +487,30 @@ pub mod pallet {
 			last_payment_date: u64,
 			payment_frequency: SubscriptionFeeFrequency,
 		) -> u64 {
-			let last_payment_date_as_naive_date = 
-				NaiveDateTime::from_timestamp_opt(
-					last_payment_date.try_into().unwrap(), 
-					0
-				).unwrap();
-			let delta = match payment_frequency {
-				SubscriptionFeeFrequency::Weekly=>RelativeDuration::weeks(1),
-				SubscriptionFeeFrequency::Monthly=>RelativeDuration::months(1),
-				SubscriptionFeeFrequency::Yearly=>RelativeDuration::years(1),
-				SubscriptionFeeFrequency::Adhoc=>RelativeDuration::weeks(0)
+			let days_till_next_payment = match payment_frequency {
+				SubscriptionFeeFrequency::Weekly=>7,
+				SubscriptionFeeFrequency::Monthly=>30,
+				SubscriptionFeeFrequency::Yearly=>365,
+				SubscriptionFeeFrequency::Adhoc=>0
 			};
-			let next_payment_date = last_payment_date_as_naive_date + delta;
-			return next_payment_date.timestamp().try_into().unwrap();
+			let next_payment_date = last_payment_date + days_till_next_payment * SECS_IN_DAY;
+			return next_payment_date;
+
+			// TODO: do something smarter about calculating next payment date
+			// Below is good, just doesn't support no_std
+			// let last_payment_date_as_naive_date = 
+			// 	NaiveDateTime::from_timestamp_opt(
+			// 		last_payment_date.try_into().unwrap(), 
+			// 		0
+			// 	).unwrap();
+			// let delta = match payment_frequency {
+			// 	SubscriptionFeeFrequency::Weekly=>RelativeDuration::weeks(1),
+			// 	SubscriptionFeeFrequency::Monthly=>RelativeDuration::months(1),
+			// 	SubscriptionFeeFrequency::Yearly=>RelativeDuration::years(1),
+			// 	SubscriptionFeeFrequency::Adhoc=>RelativeDuration::weeks(0)
+			// };
+			// let next_payment_date = last_payment_date_as_naive_date + delta;
+			// return next_payment_date.timestamp().try_into().unwrap();
 		}
 	}
 }
