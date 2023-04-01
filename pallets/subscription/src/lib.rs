@@ -218,7 +218,7 @@ pub mod pallet {
 		/// Subscription with ID already created
 		SubscriptionIdExists,
 		/// Subscription Service not found in storage
-		NonExsitantSubscriptionService,
+		NonExistentSubscriptionService,
 		/// Too many services outside the bound of the bounded vec
 		TooManyServices,
 		/// No Subscription for given service id
@@ -310,7 +310,7 @@ pub mod pallet {
 				<SubscriptionServices<T>>::get(
 					&subscription_service_id,
 				).is_some(),
-				Error::<T>::NonExsitantSubscriptionService
+				Error::<T>::NonExistentSubscriptionService
 			);
 
 			// Make the first payment to initiate the subscription
@@ -348,7 +348,7 @@ pub mod pallet {
 					let subscription_ids = 
 						maybe_subscription_ids.as_mut()
 							.ok_or(
-								<Error<T>>::NonExsitantSubscriptionService
+								<Error<T>>::NonExistentSubscriptionService
 							)?;
 					subscription_ids
 						.try_push(subscription_id)
@@ -390,7 +390,7 @@ pub mod pallet {
 					&subscription_owner_id,
 					&subscription_service_id,
 				).ok_or(
-					Error::<T>::NonExsitantSubscriptionService
+					Error::<T>::NonExistentSubscriptionService
 				)?.contains(&subscription_id),
 				Error::<T>::NoSubscriptionForService
 			);

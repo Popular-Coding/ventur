@@ -160,7 +160,7 @@ fn test_initiate_subscription_fails_with_no_service() {
                 BASE_SUBSCRIPTION_FEE,
                 SubscriptionFeeFrequency::Monthly,
             ),
-            Error::<Test>::NonExsitantSubscriptionService
+            Error::<Test>::NonExistentSubscriptionService
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
@@ -190,7 +190,7 @@ fn test_claim_subscription_payment_fails_for_uninstantiated_service() {
                 SUBSCRIPTION_SERVICE_ID,
                 SUBSCRIPTION_ID,
             ),
-            Error::<Test>::NonExsitantSubscriptionService
+            Error::<Test>::NonExistentSubscriptionService
         );
     }
     );  
