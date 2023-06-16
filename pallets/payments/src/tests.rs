@@ -5,7 +5,7 @@ use crate::{
     Config as MyConfig
 };
 use frame_support::{
-    assert_noop, 
+    assert_noop,
     assert_ok,
     traits::{
         Currency,
@@ -45,7 +45,7 @@ fn test_initialize_payment() {
             released: true,
         };
         let payment_schedule = bounded_vec![
-            scheduled_payment_1, 
+            scheduled_payment_1,
             scheduled_payment_2
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
@@ -71,10 +71,10 @@ fn test_initialize_payment() {
                 (PAYER_ID, PAYEE_ID, PAYMENT_ID)
             ).is_some()
         );
-        let expected_event = 
+        let expected_event =
             crate::Event::PaymentInitialized(
-                PAYER_ID, 
-                PAYEE_ID, 
+                PAYER_ID,
+                PAYEE_ID,
                 TOTAL_PAYMENT_AMOUNT
             );
         System::assert_last_event(mock::Event::Payments(expected_event));
@@ -87,14 +87,14 @@ fn test_claim_successful_payment() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &PAYER_ID, 
+            &PAYER_ID,
             TOTAL_PAYMENT_AMOUNT
         );
 
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
                 &PAYER_ID
-            ), 
+            ),
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -109,7 +109,7 @@ fn test_claim_successful_payment() {
             released: true,
         };
         let payment_schedule = bounded_vec![
-            scheduled_payment_1, 
+            scheduled_payment_1,
             scheduled_payment_2.clone()
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
@@ -133,13 +133,13 @@ fn test_claim_successful_payment() {
         assert_ok!(
             Payments::claim(
                 Origin::signed(PAYEE_ID),
-                PAYER_ID, 
+                PAYER_ID,
                 PAYMENT_ID
             )
         );
-        let expected_event = 
+        let expected_event =
             crate::Event::PartOfPaymentClaimed(
-                PAYEE_ID, 
+                PAYEE_ID,
                 TOTAL_PAYMENT_AMOUNT / 2
             );
         System::assert_last_event(mock::Event::Payments(expected_event));
@@ -149,32 +149,32 @@ fn test_claim_successful_payment() {
         let remaining_scheduled_payments = payment_agreements.payment_schedule;
         assert_eq!(remaining_scheduled_payments.len(), 1);
         assert_eq!(
-            remaining_scheduled_payments.first().unwrap(), 
+            remaining_scheduled_payments.first().unwrap(),
             &scheduled_payment_2,
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
                 &PAYER_ID
-            ), 
+            ),
             TOTAL_PAYMENT_AMOUNT - (TOTAL_PAYMENT_AMOUNT / 2),
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
                 &PAYEE_ID
-            ), 
+            ),
             TOTAL_PAYMENT_AMOUNT / 2,
         );
     });
 }
 
-    
+
 #[test]
 fn test_claim_fails_before_payment_date() {
     let mut t = test_externalities();
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &PAYER_ID, 
+            &PAYER_ID,
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -184,7 +184,7 @@ fn test_claim_fails_before_payment_date() {
             released: true,
         };
         let payment_schedule = bounded_vec![
-            scheduled_payment.clone(), 
+            scheduled_payment.clone(),
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
             payment_source: pallet_payments::PaymentSource::PersonalAccount,
@@ -207,7 +207,7 @@ fn test_claim_fails_before_payment_date() {
         assert_noop!(
             Payments::claim(
                 Origin::signed(PAYEE_ID),
-                PAYER_ID, 
+                PAYER_ID,
                 PAYMENT_ID
             ),
             Error::<Test>::PaymentNotAvailable
@@ -218,19 +218,19 @@ fn test_claim_fails_before_payment_date() {
         let remaining_scheduled_payments = payment_agreements.payment_schedule;
         assert_eq!(remaining_scheduled_payments.len(), 1);
         assert_eq!(
-            remaining_scheduled_payments.first().unwrap(), 
+            remaining_scheduled_payments.first().unwrap(),
             &scheduled_payment,
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
                 &PAYER_ID
-            ), 
+            ),
             TOTAL_PAYMENT_AMOUNT,
         );
         assert_eq!(
             <Test as MyConfig>::PaymentCurrency::total_balance(
                 &PAYEE_ID
-            ), 
+            ),
             0,
         );
     });
@@ -242,7 +242,7 @@ fn test_block_and_unblock_payment() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &PAYER_ID, 
+            &PAYER_ID,
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -252,7 +252,7 @@ fn test_block_and_unblock_payment() {
             released: true,
         };
         let payment_schedule = bounded_vec![
-            scheduled_payment.clone(), 
+            scheduled_payment.clone(),
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
             payment_source: pallet_payments::PaymentSource::PersonalAccount,
@@ -279,18 +279,18 @@ fn test_block_and_unblock_payment() {
                 PAYMENT_ID,
             )
         );
-        let expected_event = 
+        let expected_event =
             crate::Event::NextPaymentReleaseStatusChanged(
-                PAYER_ID, 
+                PAYER_ID,
                 PAYMENT_ID,
                 false
             );
-        
+
         System::assert_last_event(mock::Event::Payments(expected_event));
         assert_noop!(
             Payments::claim(
                 Origin::signed(PAYEE_ID),
-                PAYER_ID, 
+                PAYER_ID,
                 PAYMENT_ID
             ),
             Error::<Test>::PaymentNotReleased
@@ -301,7 +301,7 @@ fn test_block_and_unblock_payment() {
         let remaining_scheduled_payments = payment_agreements.payment_schedule;
         assert_eq!(remaining_scheduled_payments.len(), 1);
         assert_eq!(
-            remaining_scheduled_payments.first().unwrap().released, 
+            remaining_scheduled_payments.first().unwrap().released,
             false,
         );
 
@@ -315,7 +315,7 @@ fn test_block_and_unblock_payment() {
         assert_ok!(
             Payments::claim(
                 Origin::signed(PAYEE_ID),
-                PAYER_ID, 
+                PAYER_ID,
                 PAYMENT_ID
             )
         );
@@ -328,7 +328,7 @@ fn test_integration_with_escrow() {
     t.execute_with(|| {
         assert!(System::events().is_empty());
         let _ = <Test as MyConfig>::PaymentCurrency::deposit_creating(
-            &ESCROW_ACCOUNT_ID, 
+            &ESCROW_ACCOUNT_ID,
             TOTAL_PAYMENT_AMOUNT
         );
         let time: u64 = <timestamp::Pallet<Test>>::now();
@@ -341,7 +341,7 @@ fn test_integration_with_escrow() {
 		assert_ok!(EscrowModule::add_admin(Origin::signed(ESCROW_ACCOUNT_ID), PAYER_ID, ESCROW_ACCOUNT_ID));
 		assert_ok!(EscrowModule::fund_escrow(Origin::signed(ESCROW_ACCOUNT_ID), ESCROW_ACCOUNT_ID, TOTAL_PAYMENT_AMOUNT));
         let payment_schedule = bounded_vec![
-            scheduled_payment.clone(), 
+            scheduled_payment.clone(),
         ];
         let payment_method = pallet_payments::PaymentMethod::<Test>{
             payment_source: pallet_payments::PaymentSource::EscrowAccount,
@@ -361,11 +361,11 @@ fn test_integration_with_escrow() {
             Origin::signed(PAYER_ID),
             payment_details
         ));
-        
+
         assert_ok!(
             Payments::claim(
                 Origin::signed(PAYEE_ID),
-                PAYER_ID, 
+                PAYER_ID,
                 PAYMENT_ID
             )
         );

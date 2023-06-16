@@ -18,20 +18,20 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //! # Payments Pallet
-// 
+//
 //! The Payments pallet supports the instantiation of lump sum
-//! or scheduled, iterative payments. 
+//! or scheduled, iterative payments.
 //! Payments can come out of an individual's account, or out of
 //! an escrow account set up by the payer of the payment agreement
-// 
+//
 //! Payments must be claimed by individuals
 //! In the case of scheduled, iterative payments, payments can only
 //! be claimed if the claim comes after the scheduled payment date
 //
-//! Inspiration for the source code of this pallet comes from 
+//! Inspiration for the source code of this pallet comes from
 //! the Pure-Stake Crowdloan Rewards Pallet:
 //! https://github.com/PureStake/crowdloan-rewards/blob/main/src/lib.rs
-//! 
+//!
 //! While the Crowdloan Rewards Pallet supports claiming rewards,
 //! this Payments Pallet supports the instantiation of scheduled payments
 //! as well as lump sum, one-time payments
@@ -76,9 +76,9 @@ pub mod pallet {
 		pallet_prelude::RuntimeDebugNoBound,
 		pallet_prelude::*,
 		traits::{
-			Currency, 
-			ExistenceRequirement::AllowDeath, 
-			WithdrawReasons, 
+			Currency,
+			ExistenceRequirement::AllowDeath,
+			WithdrawReasons,
 			UnixTime,
 			LockableCurrency,
 		},
@@ -104,7 +104,7 @@ pub mod pallet {
 		/// Which account the funds will be transferred to
 		pub payee: T::AccountId,
 
-		/// The UID for payments, used for identifying this 
+		/// The UID for payments, used for identifying this
 		/// payment agreement
 		pub payment_id: T::PaymentId,
 
@@ -116,15 +116,16 @@ pub mod pallet {
 		/// out to the payee
 		pub total_payment_amount: BalanceOf<T>,
 
-		/// This bounded vec allows payments to be paid 
+		/// This bounded vec allows payments to be paid
 		/// out in installments
-		pub payment_schedule: 
+		pub payment_schedule:
+			// SBP-M1 review: consider using Rutime Constants
 			BoundedVec<
 				ScheduledPayment<T>, ConstU32<{VEC_LIMIT}>
 			>,
 
-		/// A struct describing where the payment will 
-		/// be coming from 
+		/// A struct describing where the payment will
+		/// be coming from
 		pub payment_method: PaymentMethod<T>,
 
 		/// The id of the admin of this payment agreement
@@ -190,6 +191,9 @@ pub mod pallet {
 	/// Here we store all payment agreements
 	/// Key: (payer, payee, payment_id)
 	/// Value: Payment Details
+	// SBP-M1 review: do we seriously need to have 3 items key?
+	// Is `payment_id` not enough?
+	// Maybe it can be reduced/optimized
 	pub type PaymentAgreements<T: Config> = StorageNMap<
 		_,
 		(
@@ -232,7 +236,7 @@ pub mod pallet {
 		/// A payment agreement with the specified key already exists
 		PaymentAlreadyInitialized,
 
-		/// The scheduled date for payment has not passed yet, 
+		/// The scheduled date for payment has not passed yet,
 		/// meaning the payment cannot be claimed
 		PaymentNotAvailable,
 
@@ -255,25 +259,26 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		// SBP-M1 review: missing benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		/// An extrinsic that transfers the next scheduled payment
 		/// to the payee's account, if the payment is available
 		pub fn claim (
-			origin: OriginFor<T>, 
+			origin: OriginFor<T>,
 			payer_id: T::AccountId,
 			payment_id: T::PaymentId,
 		) -> DispatchResult {
 			let payee = ensure_signed(origin)?;
 			<PaymentAgreements<T>>::try_mutate(
-				(&payer_id, &payee.clone(), &payment_id), 
+				(&payer_id, &payee.clone(), &payment_id),
 				| maybe_payment_agreements | -> DispatchResult {
-					let payment_details = 
+					let payment_details =
 						maybe_payment_agreements
 						.as_mut()
 						.ok_or(<Error<T>>::PaymentDetailsNonExistent)?;
 					let payment_schedule = &mut payment_details.payment_schedule;
 					ensure!(
-						!payment_schedule.is_empty(), 
+						!payment_schedule.is_empty(),
 						<Error<T>>::NoScheduledPaymentRecorded
 					);
 
@@ -285,13 +290,14 @@ pub mod pallet {
 					// Deny the payment if it is before the due date
 					let time: u64 = T::TimeProvider::now().as_secs();
 					ensure!(
-						time >= next_payment.payment_date, 
+						time >= next_payment.payment_date,
 						<Error<T>>::PaymentNotAvailable
 					);
 					let payment_amount = next_payment.amount_per_claim;
 					let payment_method = &payment_details.payment_method;
 					let payment_account_id = &payment_method.account_id;
 					ensure!(next_payment.released, <Error<T>>::PaymentNotReleased);
+					// SBP-M1 review: I would use `match` clause instead of `if` `else`
 					if payment_method.payment_source == PaymentSource::PersonalAccount {
 						Pallet::<T>::transfer_funds_from_personal_account(
 							payment_account_id,
@@ -306,7 +312,7 @@ pub mod pallet {
 							payment_amount
 						)?
 					}
-					
+
 					// If successfully claimed, get rid of the first payment
 					payment_schedule.remove(0);
 					Self::deposit_event(
@@ -318,11 +324,13 @@ pub mod pallet {
 			Ok(())
 		}
 
+		//SBP-M1 review: missing `#[pallet:call]` ?
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// SBP-M1 review: missing benchmarking
 		/// An extrinsic that initializes a payment and commits
 		/// it to storage
 		pub fn initialize_payment (
-			origin: OriginFor<T>, 
+			origin: OriginFor<T>,
 			payment_details: PaymentDetails<T>,
 		) -> DispatchResult {
 			let payer = ensure_signed(origin)?;
@@ -338,23 +346,25 @@ pub mod pallet {
 			let total_payment_amount = payment_details.total_payment_amount;
 			let paying_account = payment_details.payment_method.account_id.clone();
 			<PaymentAgreements<T>>::insert(
-				(&payer, &payee, payment_id), 
+				(&payer, &payee, payment_id),
 				payment_details
 			);
 			Self::deposit_event(
 				Event::PaymentInitialized(
-					paying_account, 
-					payee, 
+					paying_account,
+					payee,
 					total_payment_amount
 				)
-			);			
+			);
 			Ok(())
 		}
 
+		// SBP-M1 review: missing `#[pallet:call]` ?
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		// SBP-M1 review: missing proper benchmarking
 		// An extrinsic that blocks the next payment from release
 		pub fn block_next_payment (
-			origin: OriginFor<T>, 
+			origin: OriginFor<T>,
 			payee_id: T::AccountId,
 			payment_id: T::PaymentId,
 		) -> DispatchResult {
@@ -367,11 +377,13 @@ pub mod pallet {
 			)
 		}
 
+		// SBP-M1 review: missing `#[pallet:call]` ?
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		/// An extrinsic that unblocks the next payment, 
+		// SBP-M1 review: missing proper benchmarking
+		/// An extrinsic that unblocks the next payment,
 		/// allowing it to be claimed
 		pub fn release_next_payment (
-			origin: OriginFor<T>, 
+			origin: OriginFor<T>,
 			payee_id: T::AccountId,
 			payment_id: T::PaymentId,
 		) -> DispatchResult {
@@ -390,18 +402,18 @@ pub mod pallet {
 			payer: &T::AccountId,
 			payee_id: &T::AccountId,
 			payment_id: &T::PaymentId,
-			released: bool 
+			released: bool
 		) -> DispatchResult {
 			<PaymentAgreements<T>>::try_mutate(
-				(&payer.clone(), &payee_id, &payment_id), 
+				(&payer.clone(), &payee_id, &payment_id),
 				| maybe_payment_agreements | -> DispatchResult {
-					let payment_details = 
+					let payment_details =
 						&mut maybe_payment_agreements
 						.as_mut()
 						.ok_or(<Error<T>>::PaymentDetailsNonExistent)?;
 					let payment_schedule = &mut payment_details.payment_schedule;
 					ensure!(
-						!payment_schedule.is_empty(), 
+						!payment_schedule.is_empty(),
 						<Error<T>>::NoScheduledPaymentRecorded
 					);
 					let next_payment = &mut payment_schedule.get_mut(0)
@@ -413,8 +425,8 @@ pub mod pallet {
 					next_payment.released = released;
 					Self::deposit_event(
 						Event::NextPaymentReleaseStatusChanged(
-							payer.clone(), 
-							*payment_id, 
+							payer.clone(),
+							*payment_id,
 							released
 						)
 					);
@@ -425,7 +437,7 @@ pub mod pallet {
 		}
 
 		pub fn transfer_funds_from_personal_account(
-			payment_account_id: &T::AccountId, 
+			payment_account_id: &T::AccountId,
 			payee: &T::AccountId,
 			payment_amount: BalanceOf<T>,
 		) -> DispatchResult {
@@ -433,22 +445,24 @@ pub mod pallet {
 				payment_account_id,
 				payee,
 				payment_amount,
+				// SBP-M1 review: should it be set to `AllowDeath`?
+				// Leaving it up to project owners
 				AllowDeath,
 			)
 		}
 
 		pub fn transfer_funds_from_escrow_account(
 			escrow_account_id: &T::AccountId,
-			admin_account_id: &T::AccountId, 
+			admin_account_id: &T::AccountId,
 			payee: &T::AccountId,
 			payment_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			<pallet_escrow::Escrow<T>>::try_mutate(
-				escrow_account_id, 
+				escrow_account_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoEscrowAccountFound)?;
-						
+
 					ensure!(
 						!escrow_details.is_frozen,
 						Error::<T>::Frozen
@@ -462,7 +476,7 @@ pub mod pallet {
 
 					// Unlock funds
 					T::EscrowCurrency::remove_lock(pallet_escrow::ESCROW_LOCK, escrow_account_id);
-					
+
 					// Transfer the unlocked funds
 					T::PaymentCurrency::transfer(
 						escrow_account_id,
@@ -471,11 +485,14 @@ pub mod pallet {
 						AllowDeath,
 					)?;
 
-					let payment_amount_as_128: u128 = 
+					let payment_amount_as_128: u128 =
+						// SBP-M1 review: use proper error handling
+						// If it is not supposed to fail, use `expect` to provide better way for
+						// debugging
 						TryInto::<u128>::try_into(payment_amount).ok().unwrap();
 					//let amount_as_128: u128 = TryInto::<u128>::try_into(escrow_details.amount.clone()).ok().unwrap();
 					escrow_details.amount -= payment_amount_as_128.try_into().ok().unwrap();
-					
+
 					// Lock the remaining funds
 					T::EscrowCurrency::set_lock(
 						pallet_escrow::ESCROW_LOCK,
