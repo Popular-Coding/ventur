@@ -32,7 +32,7 @@ rustup update stable
 
 rustup update nightly
 
-rustup install nightly-2022-09-19 
+rustup install nightly-2022-09-19
 
 rustup override set nightly-2022-09-19
 

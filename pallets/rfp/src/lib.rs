@@ -35,15 +35,15 @@
 //! - Accepting RFP bids.
 //! - Updating RFPs.
 //! - Canceling RFPs.
-//! 
+//!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
 //!
-//! - `create_rfp` - 
-//! - `update_rfp` - 
-//! - `cancel_rfp` - 
-//! - `bid_on_rfp` - 
+//! - `create_rfp` -
+//! - `update_rfp` -
+//! - `cancel_rfp` -
+//! - `bid_on_rfp` -
 //! - `shortlist_bid` -
 //! - `update_rfp_bid` -
 //! - `accept_rfp_bid` -
@@ -128,6 +128,8 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_rfps)]
+	// SBP-M1 review: do you need both owner & id as a key?
+	// Is rfp_id not enough?
 	pub type RFPs<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
@@ -155,6 +157,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		T::RFPId, // rfP_id
 		BoundedVec<
+			// SBP-M1 review: consider using Runtime Constants
 				T::BidId, ConstU32<{VEC_LIMIT}>
 			>,
 		OptionQuery,
@@ -267,14 +270,15 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// A dispatchable to create an RFP
+		// SBP-M1 review: missing benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn create_rfp(
-			origin: OriginFor<T>, 
+			origin: OriginFor<T>,
 			rfp_id: T::RFPId,
 			rfp_details: RFPDetails<T>
 		) -> DispatchResult {
 			let rfp_owner = ensure_signed(origin)?;
-			
+
 			// Assert rfp doesn't already exist
 			let rfp_exists = <RFPs<T>>::get(
 				&rfp_owner,
@@ -288,10 +292,11 @@ pub mod pallet {
 
 			// Insert the RFP details into storage
 			<RFPs<T>>::insert(
-				&rfp_owner, 
+				&rfp_owner,
 				&rfp_id,
 				rfp_details
 			);
+			// SBP-M1 review: I would use type alias
 			let rfps_to_bids: BoundedVec<
 				T::BidId, ConstU32<{VEC_LIMIT}>
 			> = BoundedVec::<
@@ -308,10 +313,12 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to modify an existing RFP
-		 #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: missing #[pallet::call] ?
+		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: missing proper benchmarking
 		pub fn update_rfp(
-			origin: OriginFor<T>, 
-			rfp_id: T::RFPId, 
+			origin: OriginFor<T>,
+			rfp_id: T::RFPId,
 			new_rfp_details: RFPDetails<T>
 		) -> DispatchResult {
 			let rfp_owner = ensure_signed(origin)?;
@@ -321,7 +328,7 @@ pub mod pallet {
 				&rfp_owner,
 				&rfp_id,
 				| maybe_rfp_details | -> DispatchResult {
-					let rfp_details = 
+					let rfp_details =
 						maybe_rfp_details.as_mut()
 							.ok_or(
 								<Error<T>>::UpdatingNonExistentRFP
@@ -332,15 +339,17 @@ pub mod pallet {
 			)?;
 			Self::deposit_event(
 				Event::UpdateRFP(
-					rfp_owner, 
+					rfp_owner,
 					rfp_id
 				)
 			);
 			Ok(())
 		}
-		
+
 		/// A dispatchable to cancel an existing RFP
+		// SBP-M1 review: missing #[pallet::call] ?
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: missing benchmarking
 		pub fn cancel_rfp(origin: OriginFor<T>, rfp_id: T::RFPId) -> DispatchResult {
 			let rfp_owner = ensure_signed(origin)?;
 			ensure!(
@@ -358,11 +367,13 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to Bid on an RFP
+		// SBP-M1 review: missing #[pallet::call] ?
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: missing proper benchmarking
 		pub fn bid_on_rfp(
-			origin: OriginFor<T>, 
-			rfp_owner: T::AccountId, 
-			rfp_id: T::RFPId, 
+			origin: OriginFor<T>,
+			rfp_owner: T::AccountId,
+			rfp_id: T::RFPId,
 			bid_id: T::BidId,
 			bid_details: BidDetails<T>
 		) -> DispatchResult {
@@ -388,7 +399,7 @@ pub mod pallet {
 			<RFPToBids<T>>::try_mutate(
 				&rfp_id,
 				| maybe_bids_for_rfp | -> DispatchResult {
-					let bids_for_rfp = 
+					let bids_for_rfp =
 						maybe_bids_for_rfp.as_mut()
 							.ok_or(
 								<Error<T>>::NoBidsForRFPFound
@@ -407,11 +418,14 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// SBP-M1 review: missing #[pallet::call] ?
 		/// A dispatchable to create a shortlist of bids
+		// SBP-M1 review: missing benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: too long function, refactor needed
 		pub fn shortlist_bid(
-			origin: OriginFor<T>, 
-			rfp_id: T::RFPId, 
+			origin: OriginFor<T>,
+			rfp_id: T::RFPId,
 			bid_id: T::BidId,
 		) -> DispatchResult {
 			let rfp_owner = ensure_signed(origin)?;
@@ -434,7 +448,7 @@ pub mod pallet {
 			).ok_or(
 				Error::<T>::NoBidsForRFP
 			)?;
-			
+
 			ensure!(
 				all_bids_for_rfp.contains(&bid_id),
 				Error::<T>::NoSuchBidForRFP
@@ -442,10 +456,12 @@ pub mod pallet {
 			let maybe_shortlisted_bids = <RFPToShortlistedBids<T>>::get(
 				&rfp_id,
 			);
+			// SBP-M1 review: I would use `match` clause
 			if let Some(mut _shortlisted_bids) = maybe_shortlisted_bids {
 				<RFPToShortlistedBids<T>>::mutate(
 					&rfp_id,
 					| maybe_shortlisted_bids | -> DispatchResult {
+						// SBP-M1 review: better use `expect` than `unwrap`
 						let shortlisted_bids = maybe_shortlisted_bids.as_mut().unwrap();
 						shortlisted_bids.try_push(bid_id)
 							.ok()
@@ -481,11 +497,13 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// SBP-M1 review: missing #[pallet::call] ?
 		/// A dispatchable to update a bid on an RFP
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: missing proper benchmarking
 		pub fn update_rfp_bid(
-			origin: OriginFor<T>, 
-			rfp_id: T::RFPId, 
+			origin: OriginFor<T>,
+			rfp_id: T::RFPId,
 			bid_id: T::BidId,
 			updated_bid_details: BidDetails<T>
 		) -> DispatchResult {
@@ -493,7 +511,7 @@ pub mod pallet {
 			<AllBids<T>>::try_mutate(
 				&bid_id,
 				| maybe_bid_details | -> DispatchResult {
-					let bid_details = 
+					let bid_details =
 						maybe_bid_details.as_mut()
 							.ok_or(
 								<Error<T>>::UpdatingNonExistentBid
@@ -508,19 +526,22 @@ pub mod pallet {
 			)?;
 			Self::deposit_event(
 				Event::UpdateRFPBid(
-					updater_id, 
-					rfp_id, 
+					updater_id,
+					rfp_id,
 					bid_id
 				)
 			);
 			Ok(())
 		}
 
+		// SBP-M1 review: missing #[pallet::call] ?
 		/// A dispatchable to accept a bid on an RFP
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
+		// SBP-M1 review: missing benchmarking
+		// SBP-M1 review: too long function, refator needed
 		pub fn accept_rfp_bid(
-			origin: OriginFor<T>, 
-			rfp_id: T::RFPId, 
+			origin: OriginFor<T>,
+			rfp_id: T::RFPId,
 			bid_id: T::BidId,
 			payment_details: pallet_payments::PaymentDetails::<T>
 		) -> DispatchResult {
@@ -530,7 +551,7 @@ pub mod pallet {
 				&rfp_owner,
 				&rfp_id,
 				| maybe_rfp_details | -> DispatchResult {
-					let rfp_details = 
+					let rfp_details =
 						maybe_rfp_details.as_mut()
 							.ok_or(
 								<Error<T>>::NonExistentRFP
@@ -544,8 +565,9 @@ pub mod pallet {
 						&rfp_id
 					);
 
+					// SBP-M1 review: I would use `match` clause
 					if shortlisted_bids.is_some() {
-						// If there has been a shortlisting process, 
+						// If there has been a shortlisting process,
 						// ensure that the bid to be accepted has been
 						// shortlisted
 						ensure!(
@@ -564,12 +586,12 @@ pub mod pallet {
 							Error::<T>::NoSuchBidForRFP
 						);
 					}
-		
+
 					ensure!(
 						<RFPToAcceptedBid<T>>::get(&rfp_id).is_none(),
 						Error::<T>::BidAlreadyAccepted
 					);
-		
+
 					<pallet_payments::Pallet<T>>::initialize_payment(
 						origin,
 						payment_details
@@ -586,7 +608,7 @@ pub mod pallet {
 
 			Self::deposit_event(
 				Event::AcceptRFPBid(
-					rfp_owner, 
+					rfp_owner,
 					rfp_id,
 					bid_id,
 				)

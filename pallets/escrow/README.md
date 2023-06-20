@@ -31,7 +31,7 @@ rustup update stable
 
 rustup update nightly
 
-rustup install nightly-2022-09-19 
+rustup install nightly-2022-09-19
 
 rustup override set nightly-2022-09-19
 
@@ -40,6 +40,7 @@ rustup target add wasm32-unknown-unknown
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
 
+<!-- SBP-M1 review: where is the deployment described?  -->
 ### Deploy a Local Ventur Node
 
 #### Fetch the code

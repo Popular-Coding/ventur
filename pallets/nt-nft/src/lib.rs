@@ -1,4 +1,4 @@
-// This file is part of Ventur, it implements an NT-NFT, 
+// This file is part of Ventur, it implements an NT-NFT,
 // Non-Transferable NFT, Substrate Pallet.
 
 // Copyright (C) 2022 Popular Coding LLC.
@@ -18,8 +18,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Attribution - Parity - Uniques Pallet
-// This pallet's approach to interfaces/extrinsics for nfts is directly 
-// inspired by Parity's uniques pallet.  Below is a link to their source 
+// This pallet's approach to interfaces/extrinsics for nfts is directly
+// inspired by Parity's uniques pallet.  Below is a link to their source
 // code, as well as the Apache 2.0 license that applies to it.
 
 // https://github.com/paritytech/substrate/blob/master/frame/uniques/src/lib.rs
@@ -37,6 +37,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// SBP-M1 review: missing benchmarking
 
 //! # NT-NFT Pallet
 //!
@@ -59,7 +61,7 @@
 //! - Assigning NT-NFTs.
 //! - Burning NT-NFTs.
 //! - Discarding NT-NFTs.
-//! 
+//!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
@@ -98,6 +100,8 @@ pub mod pallet {
 		pub(super) owner: AccountId,
 		pub(super) amount: u32,
 		pub(super) is_frozen: bool,
+		// SBP-M1 review: consider using Runtime Constants
+		// Like https://docs.substrate.io/reference/how-to-guides/basics/configure-runtime-constants/
 		pub(super) image_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 		pub(super) metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 	}
@@ -124,61 +128,66 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn collection)]
-	pub(super) type Collection<T: Config> = 
-		StorageMap<_, 
-			Blake2_128Concat, 
-			T::CollectionId, 
-			CollectionDetails<T::AccountId>, 
+	pub(super) type Collection<T: Config> =
+		StorageMap<_,
+			Blake2_128Concat,
+			T::CollectionId,
+			CollectionDetails<T::AccountId>,
 			OptionQuery>;
-	
+
 	#[pallet::storage]
 	#[pallet::getter(fn assignment)]
-	pub(super) type Assignment<T: Config> = 
-		StorageDoubleMap<_, 
-			Blake2_128Concat, 
-			T::CollectionId, 
-			Blake2_128Concat, 
-			T::AccountId, 
-			T::ItemId, 
+	pub(super) type Assignment<T: Config> =
+		StorageDoubleMap<_,
+			Blake2_128Concat,
+			T::CollectionId,
+			Blake2_128Concat,
+			T::AccountId,
+			T::ItemId,
 			OptionQuery>;
-			
+
 	#[pallet::storage]
 	#[pallet::getter(fn proposed_assignment)]
-	pub(super) type ProposedAssignment<T: Config> = 
-		StorageDoubleMap<_, 
-			Blake2_128Concat, 
-			T::CollectionId, 
-			Blake2_128Concat, 
-			T::AccountId, 
-			T::ItemId, 
+	pub(super) type ProposedAssignment<T: Config> =
+		StorageDoubleMap<_,
+			Blake2_128Concat,
+			T::CollectionId,
+			Blake2_128Concat,
+			T::AccountId,
+			T::ItemId,
 			OptionQuery>;
-	
+
 	// ToDo: Evaluate whether keeping cancelled assignments is worth the storage cost.
+	// SBP-M1 review: comment regarding ToDo
+	// You can always have off-chain data indexer
+	// And the full history can be verified on blockchain
 	#[pallet::storage]
 	#[pallet::getter(fn canceled_assignment)]
-	pub(super) type CanceledAssignment<T: Config> = 
-		StorageDoubleMap<_, 
-			Blake2_128Concat, 
-			T::CollectionId, 
-			Blake2_128Concat, 
-			T::AccountId, 
-			T::ItemId, 
+	pub(super) type CanceledAssignment<T: Config> =
+		StorageDoubleMap<_,
+			Blake2_128Concat,
+			T::CollectionId,
+			Blake2_128Concat,
+			T::AccountId,
+			T::ItemId,
 			OptionQuery>;
-	
+
 	#[pallet::storage]
 	#[pallet::getter(fn item)]
-	pub(super) type Item<T: Config> = 
-		StorageDoubleMap<_, 
-			Blake2_128Concat, 
-			T::CollectionId, 
-			Blake2_128Concat, 
-			T::ItemId, 
-			ItemDetails<T::AccountId>, 
+	pub(super) type Item<T: Config> =
+		StorageDoubleMap<_,
+			Blake2_128Concat,
+			T::CollectionId,
+			Blake2_128Concat,
+			T::ItemId,
+			ItemDetails<T::AccountId>,
 			OptionQuery>;
-	
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		// SBP-M1 review: I would use names for events suggesting that an action has been done, eg`CollectionCreated`
+		// Names you used here are better for extrinsic
 		/// Create a Collection of NT-NFTs
 		/// [collection, account]
 		CreateCollection(T::CollectionId, T::AccountId),
@@ -243,17 +252,20 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
         /// A dispatchable to create an NT-NFT Collection
+		// SBP-M1 review: missing proper benchmarking
         #[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn create_collection(
-			origin: OriginFor<T>, 
+			origin: OriginFor<T>,
 			collection_id: T::CollectionId,
+			// SBP-M1 review: how about introducing type alias instead of BoundedVec<>... ?
+			// It would be more readable
 			image_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 			metadata_ipfs_cid: BoundedVec<u8, ConstU32<{VEC_LIMIT}>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			ensure!(!<Collection<T>>::contains_key(&collection_id), <Error<T>>::CollectionIdAlreadyExists);
 			<Collection<T>>::insert(
-				collection_id, 
+				collection_id,
 				CollectionDetails {
 					owner: who.clone(),
 					amount: 0,
@@ -267,14 +279,15 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to freeze an NT-NFT Collection
+		// SBP-M1 review: missing benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn freeze_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
 			let who = ensure_signed(origin)?;
-			
+
 			// Check that collection exists
 			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
-			
+
 			// Check that collection is not frozen
 			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
 
@@ -283,11 +296,11 @@ pub mod pallet {
 
 			// Freeze the account
 			<Collection<T>>::try_mutate(
-				&collection_id, 
+				&collection_id,
 				| maybe_collection_details | -> DispatchResult {
 					let collection_details =
 						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
-					
+
 					collection_details.is_frozen = true;
 					Ok(())
 				}
@@ -297,14 +310,15 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to thaw an NT-NFT Collection
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn thaw_collection(origin: OriginFor<T>, collection_id: T::CollectionId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
 			let who = ensure_signed(origin)?;
-		
+
 			// Check that collection exists
 			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
-			
+
 			// Check that collection is frozen
 			ensure!(collection_details.is_frozen, <Error<T>>::CollectionNotFrozen);
 
@@ -312,11 +326,11 @@ pub mod pallet {
 			ensure!(who == collection_details.owner, <Error<T>>::Unauthorized);
 
 			<Collection<T>>::try_mutate(
-				&collection_id, 
+				&collection_id,
 				| maybe_collection_details | -> DispatchResult {
 					let collection_details =
 						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
-					
+
 					collection_details.is_frozen = false;
 					Ok(())
 				}
@@ -326,6 +340,7 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to mint an NT-NFT
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
 		pub fn mint_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction signed, collection exists, and caller is authorized
@@ -345,11 +360,11 @@ pub mod pallet {
 
 			// Insert Item and Update Collection
 			<Collection<T>>::try_mutate(
-				&collection_id, 
+				&collection_id,
 				| maybe_collection_details | -> DispatchResult {
 					let collection_details =
 						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
-					let new_amount = 
+					let new_amount =
 						collection_details.amount.checked_add(1).ok_or(<Error<T>>::StorageOverflow)?;
 					collection_details.amount = new_amount;
 					let item = ItemDetails{
@@ -361,13 +376,14 @@ pub mod pallet {
 					Ok(())
 				}
 			)?;
-			
+
 			// Deposit Event
 			Self::deposit_event(Event::MintNTNFT(collection_id, ntnft_id, who));
 			Ok(())
 		}
 
 		/// A dispatchable to burn an NT-NFT
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(2, 2).ref_time())]
 		pub fn burn_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction signed
@@ -387,11 +403,11 @@ pub mod pallet {
 
 			// Update Collection
 			<Collection<T>>::try_mutate(
-				&collection_id, 
+				&collection_id,
 				| maybe_collection_details | -> DispatchResult {
 					let collection_details =
 						maybe_collection_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
-					let new_amount = 
+					let new_amount =
 						collection_details.amount.checked_sub(1).ok_or(<Error<T>>::StorageOverflow)?;
 					collection_details.amount = new_amount;
 					Ok(())
@@ -405,13 +421,14 @@ pub mod pallet {
 				<ProposedAssignment<T>>::remove(&collection_id, &item.owner);
 			}
 			<Item<T>>::remove(&collection_id, &ntnft_id);
-			
+
 			// Deposit Event
 			Self::deposit_event(Event::BurnNTNFT(collection_id, ntnft_id, who));
 			Ok(())
 		}
 
 		/// A dispatchable to assign an NT-NFT
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 1).ref_time())]
 		pub fn assign_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId, target_address: T::AccountId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -419,7 +436,7 @@ pub mod pallet {
 
 			// Check that collection exists
 			let collection_details = <Collection<T>>::get(&collection_id).ok_or(<Error<T>>::CollectionIdDoesNotExist)?;
-			
+
 			// Check that collection is not frozen
 			ensure!(!collection_details.is_frozen, <Error<T>>::CollectionFrozen);
 
@@ -430,8 +447,8 @@ pub mod pallet {
 			ensure!(<Item<T>>::contains_key(&collection_id, &ntnft_id), <Error<T>>::ItemIdDoesNotExist);
 
 			<Item<T>>::try_mutate(
-				&collection_id, 
-				&ntnft_id, 
+				&collection_id,
+				&ntnft_id,
 				| maybe_item_details | -> DispatchResult {
 					let item_details =
 						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
@@ -448,6 +465,7 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to accept an NT-NFT assignment
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn accept_assignment(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -455,17 +473,17 @@ pub mod pallet {
 
 			// Check that target has a proposed assignment
 			ensure!(<ProposedAssignment<T>>::contains_key(&collection_id, &who), <Error<T>>::NoAssignmentForThisAccount);
-			
+
 			// Update item assignment
 			<Item<T>>::try_mutate(
-				&collection_id, 
-				&ntnft_id, 
+				&collection_id,
+				&ntnft_id,
 				| maybe_item_details | -> DispatchResult {
 					let item_details =
 						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
 					ensure!(
-						!item_details.is_accepted && 
-						item_details.is_assigned, 
+						!item_details.is_accepted &&
+						item_details.is_assigned,
 						<Error<T>>::ItemIsNotAssigned
 					);
 					item_details.is_accepted = true;
@@ -481,6 +499,7 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to reject an NT-NFT assignment
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(3, 1).ref_time())]
 		pub fn cancel_assignment(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId, target_address: T::AccountId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -500,14 +519,14 @@ pub mod pallet {
 
 			// Update item and cancel assignment
 			<Item<T>>::try_mutate(
-				&collection_id, 
-				&ntnft_id, 
+				&collection_id,
+				&ntnft_id,
 				| maybe_item_details | -> DispatchResult {
 					let item_details =
 						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;
 					ensure!(
-						!item_details.is_accepted && 
-						item_details.is_assigned,   
+						!item_details.is_accepted &&
+						item_details.is_assigned,
 						<Error<T>>::ItemIsNotAssigned
 					);
 					item_details.is_accepted = false;
@@ -518,12 +537,13 @@ pub mod pallet {
 				}
 			)?;
 
-			
+
 			Self::deposit_event(Event::CancelAssignment(who, collection_id, ntnft_id, target_address));
 			Ok(())
 		}
 
 		/// A dispatchable to discard an NT-NFT assignment
+		// SBP-M1 review: missing proper benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn discard_ntnft(origin: OriginFor<T>, collection_id: T::CollectionId, ntnft_id: T::ItemId) -> DispatchResult {
 			// Ensure transaction is signed
@@ -534,8 +554,8 @@ pub mod pallet {
 
 			// Update item to unassign ntnft from the caller
 			<Item<T>>::try_mutate(
-				&collection_id, 
-				&ntnft_id, 
+				&collection_id,
+				&ntnft_id,
 				| maybe_item_details | -> DispatchResult {
 					let item_details =
 						maybe_item_details.as_mut().ok_or(<Error<T>>::ItemIdDoesNotExist)?;

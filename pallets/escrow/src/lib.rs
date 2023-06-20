@@ -1,4 +1,4 @@
-// This file is part of Ventur, it implements a multi admin locked fund 
+// This file is part of Ventur, it implements a multi admin locked fund
 // account, with configurations for open contribution.
 
 // Copyright (C) 2022 Popular Coding LLC.
@@ -16,6 +16,8 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// SBP-M1 review: missing benchmarking for the pallet!
 
 //! # Escrow Pallet
 //!
@@ -36,7 +38,7 @@
 //! - Enabling and Disabling Open (Non Admin) Contributions to the Locked Escrow Funds
 //! - Freezing and Thawing the Escrow.
 //! - Closing the Escrow, and proportionally disbursing the remaining funds back to contributors.
-//! 
+//!
 //! ## Interface
 //!
 //! ### Dispatchable Functions
@@ -69,19 +71,21 @@ mod benchmarking;
 pub mod pallet {
 	use frame_support::{
 		dispatch::DispatchResult,
-		pallet_prelude::*, 
-		sp_std::vec, 
+		pallet_prelude::*,
+		sp_std::vec,
 		traits::{
 			Currency,
 			LockIdentifier,
 			LockableCurrency,
-			WithdrawReasons, 
+			WithdrawReasons,
 			ExistenceRequirement::AllowDeath
-		}, 
+		},
 		sp_runtime::{traits::{Zero, CheckedSub}}
 	};
 	use frame_system::pallet_prelude::*;
 
+	// SBP-M1 review: consider using Runtime Constants
+	// Like https://docs.substrate.io/reference/how-to-guides/basics/configure-runtime-constants/
 	pub const VEC_LIMIT: u32 = u32::MAX;
 	pub const ESCROW_LOCK: LockIdentifier = *b"Escrowed";
 
@@ -99,8 +103,12 @@ pub mod pallet {
 	}
 	#[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
+
+	// SBP-M1 review: consider using Runtime Constants
+	// Like https://docs.substrate.io/reference/how-to-guides/basics/configure-runtime-constants/
 	pub struct EscrowDetails<AccountId, T:Config> {
 		pub admins: BoundedVec<AccountId, ConstU32<{VEC_LIMIT}>>,
+		// SBP-M1 review: type alias may make it look cleaner
 		pub(super) contributions: BoundedVec<Contribution<AccountId, T>, ConstU32<{VEC_LIMIT}>>,
 		pub amount: BalanceOf<T>,
 		pub(super) total_contributed: BalanceOf<T>,
@@ -116,7 +124,7 @@ pub mod pallet {
 	#[pallet::getter(fn escrow)]
 	pub type Escrow<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, EscrowDetails<T::AccountId, T>, OptionQuery>;
 
-	// The Administrator storage map needs to be reevaluated, 
+	// The Administrator storage map needs to be reevaluated,
 	// originally intended to provide a quick means of querying all of the escrows tied to an account
 	// need to confirm if storage costs are worthwhile functionally, or if it makes sense to use an indexer for this
 	#[pallet::storage]
@@ -202,11 +210,12 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// A dispatchable to create an escrow
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn create_escrow(origin: OriginFor<T>) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&who);
 			ensure!(
@@ -215,10 +224,14 @@ pub mod pallet {
 			);
 
 			// Insert new Escrow and Administrator into Storage
+			// SBP-M1 review: use `expect` instead of `unwrap`
+			// It allows to define better panic description (may help during debugging)
+			// SBP-M1 review: I prefer `Vec::new()` and `Vec::from()` instead of `vec![]`
 			let admins: BoundedVec<T::AccountId, ConstU32<{VEC_LIMIT}>> = vec![who.clone()].try_into().unwrap();
 			let contributions: BoundedVec<Contribution<T::AccountId, T>, ConstU32<{VEC_LIMIT}>> = vec![].try_into().unwrap();
 			<Escrow<T>>::insert(
-				who.clone(), 
+				who.clone(),
+				// SBP-M1 review: maybe default constructor for `EscrowDetails`?
 				EscrowDetails {
 					admins,
 					contributions,
@@ -247,23 +260,26 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to fund an escrow
+		// SBP-M1 review: benchmarking
+		// SBP-M1 review: too long function, refactor needed
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn fund_escrow(origin: OriginFor<T>, escrow_id: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let funder = ensure_signed(origin)?;
-			
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// If escrow isn't open, confirm that origin is an admin
 			if !escrow_details.is_open {
 			ensure!(
+				// SBP-M1 review: try to avoid clonig values
 				escrow_details.admins.iter().any(|x| *x == funder.clone()),
 				Error::<T>::Unauthorized
 			);
@@ -283,11 +299,11 @@ pub mod pallet {
 
 			// Update Escrow storage
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoneValue)?;
-					
+
 					escrow_details.amount += amount;
 					escrow_details.total_contributed += amount;
 
@@ -320,24 +336,27 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// A dispatchable to payout from an escrow 
+		/// A dispatchable to payout from an escrow
 		/// --This functionality may be limitted to payouts from RFPs only once the RFP pallet is implemented
+		// SBP-M1 review: benchmarking
+		// SBP-M1 review: too long function, refactor needed
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn payout_escrow(origin: OriginFor<T>, payee: T::AccountId, escrow_id: T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// Confirm that origin is an admin
 			ensure!(
+				// SBP-M1 review: try to avoid cloning
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
 				Error::<T>::Unauthorized
 			);
@@ -353,7 +372,7 @@ pub mod pallet {
 				(escrow_details.amount >= amount),
 				Error::<T>::InsufficientEscrowFunds
 			);
-			
+
 			T::EscrowCurrency::remove_lock(ESCROW_LOCK, &escrow_id);
 
 			// Send funds to payee
@@ -366,13 +385,13 @@ pub mod pallet {
 
 			// Update Escrow storage
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					escrow_details.amount -= amount;
-					
+
 					T::EscrowCurrency::set_lock(
 						ESCROW_LOCK,
 						&escrow_id.clone(),
@@ -390,41 +409,52 @@ pub mod pallet {
 		}
 
 		/// A dispatchable to close an escrow
+		// SBP-M1 review: benchmarking
+		//
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn close_escrow(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
+			// SBP-M1 review: below lines can be seen in many extrinsics...
+			// Maybe they should be refactored into a single function and reused multiple times?
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// Confirm that origin is an admin
 			ensure!(
+				// SBP-M1 review: try to avoid cloning
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
 				Error::<T>::Unauthorized
 			);
 
-			// Cast the Total Contributed and Current Balance from Escrow to u128s 
+			// Cast the Total Contributed and Current Balance from Escrow to u128s
 				// for use in calculating the distribution of the remaining balance
-			let escrow_total_at_closing: u128 = 
+			// SBP-M1 review: `do not use unwrap`. Pallets should return Error, not panic
+			// Panic means that there is a bug in implementation (for that you should use `expect`)
+			let escrow_total_at_closing: u128 =
 				TryInto::<u128>::try_into(escrow_details.amount).ok().unwrap();
-			let escrow_total_contributed: u128 = 
+			let escrow_total_contributed: u128 =
 				TryInto::<u128>::try_into(escrow_details.total_contributed).ok().unwrap();
-			
+
 			// Unlock Escrow for Distribution
 			T::EscrowCurrency::remove_lock(ESCROW_LOCK, &escrow_id);
-			
+
 			// Distribute remaining funds to contributors proportionately to their contributions
+
+			// SBP-M1 review: Weight depends on `contributions` count
 			escrow_details.contributions.iter().for_each(|contribution|{
+				// SBP-M1 review: same comment about `unwrap`
 				let contributed_amount: u128 = TryInto::<u128>::try_into(contribution.amount).ok().unwrap();
 				// Calculate their disbursement
-				let close_disbursement: u128 = 
+				let close_disbursement: u128 =
 					(escrow_total_at_closing as f64 * (contributed_amount as f64/escrow_total_contributed as f64)) as u128;
 				// Transfer the funds to the contributor
 				T::EscrowCurrency::transfer(
@@ -438,6 +468,7 @@ pub mod pallet {
 			// Remove Escrow and Administrator from Storage
 			<Escrow<T>>::remove(escrow_id.clone());
 			// Remove all Admins
+			// SBP-M1 review: Weight depends on `admins` count
 			escrow_details.admins.iter().for_each(|admin|{
 				<Administrator<T>>::remove(
 					admin.clone(),
@@ -453,14 +484,16 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to open an account for contributions from non admins
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn enable_open_contribution(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
+			// SBP-M1 review: same as above regarding cloning & code reusage
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
@@ -472,39 +505,41 @@ pub mod pallet {
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
 				Error::<T>::Unauthorized
 			);
-			
+
 			// Update Escrow storage to set is_open
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					escrow_details.is_open = true;
 					Ok(())
 				}
 			)?;
-			
+
 			// Emit event
 			Self::deposit_event(Event::EnableOpenContribution(escrow_id, who));
 			Ok(())
 		}
 
 		/// Dispatchable which allows an escrow admin to disable contributions from non admins to the locked escrow funds.
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn disable_open_contribution(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
+			// SBP-M1 review: same as above about cloning & code reusage
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// Confirm that origin is an admin
 			ensure!(
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
@@ -513,11 +548,11 @@ pub mod pallet {
 
 			// Update Escrow storage to set is_open
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					escrow_details.is_open = false;
 					Ok(())
 				}
@@ -529,20 +564,22 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to freeze an escrow
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn freeze_escrow(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
+			// SBP-M1 review: same as above regarding cloning & code reusage
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// Confirm that origin is an admin
 			ensure!(
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
@@ -551,11 +588,11 @@ pub mod pallet {
 
 			// Update Escrow storage to set is_frozen
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					escrow_details.is_frozen = true;
 					Ok(())
 				}
@@ -567,11 +604,13 @@ pub mod pallet {
 		}
 
 		/// Dispatchable which allows an escrow admin to thaw an escrow
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 1).ref_time())]
 		pub fn thaw_escrow(origin: OriginFor<T>, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
+			// SBP-M1 review: same as above about cloning & code reusage
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
 
@@ -589,36 +628,38 @@ pub mod pallet {
 
 			// Update Escrow storage to set is_frozen
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					escrow_details.is_frozen = false;
 					Ok(())
 				}
 			)?;
-			
+
 			// Emit event
 			Self::deposit_event(Event::ThawEscrow(escrow_id, who));
 			Ok(())
 		}
 
 		/// A dispatchable to add an administrator
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn add_admin(origin: OriginFor<T>, new_admin: T::AccountId, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
+			// SBP-M1 review: same as above about cloning & code reusage
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// Confirm that origin is an admin
 			ensure!(
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
@@ -633,11 +674,11 @@ pub mod pallet {
 
 			// Insert new Escrow and Administrator into Storage
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details =
 						maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					// Add admin to vector
 					escrow_details.admins.try_push(new_admin.clone()).ok();
 					Ok(())
@@ -655,28 +696,31 @@ pub mod pallet {
 			Ok(())
 		}
 
-		
+
 		/// A dispatchable to remove an administrator
+		// SBP-M1 review: benchmarking
 		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1, 2).ref_time())]
 		pub fn remove_admin(origin: OriginFor<T>, admin_to_remove: T::AccountId, escrow_id: T::AccountId) -> DispatchResult {
 			// Check that our caller has signed the transaction
 			let who = ensure_signed(origin)?;
-			
+
+			// SBP-M1 review: same as above about cloning & code reusage
+
 			// Check that the passed in escrow exists
 			let escrow_details = <Escrow<T>>::get(&escrow_id).ok_or(<Error<T>>::NoSuchEscrow)?;
-			
+
 			// Check escrow isn't frozen
 			ensure!(
 				!escrow_details.is_frozen,
 				Error::<T>::Frozen
 			);
-			
+
 			// Confirm that origin is an admin
 			ensure!(
 				escrow_details.admins.iter().any(|x| *x == who.clone()),
 				Error::<T>::Unauthorized
 			);
-			
+
 			// Confirm Admin is present to be removed
 			ensure!(
 				escrow_details.admins.iter().any(|x| *x == admin_to_remove.clone()),
@@ -684,12 +728,13 @@ pub mod pallet {
 			);
 
 			<Escrow<T>>::try_mutate(
-				&escrow_id, 
+				&escrow_id,
 				| maybe_escrow_details | -> DispatchResult {
 					let escrow_details = maybe_escrow_details.as_mut().ok_or(<Error<T>>::NoSuchEscrow)?;
-					
+
 					// Remove admin from vector
 					escrow_details.admins.remove(
+						// SBP-M1 review: same again about `unwrap`
 						escrow_details.admins.iter().position(|x| *x == admin_to_remove.clone()).unwrap()
 					);
 					Ok(())
